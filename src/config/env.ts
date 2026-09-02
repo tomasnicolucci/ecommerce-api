@@ -10,6 +10,8 @@ const envSchema = z.object({
   POSTGRES_USER: z.string(),
   POSTGRES_PASSWORD: z.string(),
 
+  DATABASE_URL: z.string(),
+
   MONGODB_URI: z.string()
 });
 

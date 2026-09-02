@@ -19,7 +19,10 @@
     "build": "tsc",
     "start": "node dist/server.js",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "migrate:create": "node-pg-migrate create --migrations-dir migrations --migration-file-language ts",
+    "migrate:up": "tsx ./node_modules/node-pg-migrate/bin/node-pg-migrate up --migrations-dir migrations",
+    "migrate:down": "tsx ./node_modules/node-pg-migrate/bin/node-pg-migrate down --migrations-dir migrations"
   },
   "dependencies": {
     "dotenv": "^17.4.2",
@@ -33,6 +36,7 @@
     "@types/node": "^26.4.0",
     "@types/pg": "^8.23.1",
     "@types/supertest": "^7.2.1",
+    "node-pg-migrate": "^9.0.0",
     "supertest": "^7.2.2",
     "tsx": "^4.23.13",
     "typescript": "^7.0.2",
