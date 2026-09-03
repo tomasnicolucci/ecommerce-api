@@ -2,6 +2,7 @@ services:
   postgres:
     image: postgres:17
     container_name: ecommerce-postgres
+    restart: unless-stopped
     environment:
       POSTGRES_DB: ecommerce
       POSTGRES_USER: ecommerce
@@ -27,6 +28,7 @@ services:
   mongodb:
     image: mongo:8
     container_name: ecommerce-mongodb
+    restart: unless-stopped
     ports:
       - "27017:27017"
     volumes:
