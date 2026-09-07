@@ -1,6 +1,7 @@
 import type { CategoryRepository } from "../../domain/repositories/category-repository.js";
 import { Category } from "../../domain/entities/category.js";
 import type { AttributeDefinition } from "../../domain/types/attribute-definition.js";
+import { AppError } from "../../../../shared/domain/errors/app-error.js";
 
 interface CreateCategoryInput {
   name: string;
@@ -20,7 +21,7 @@ export class CreateCategory {
     );
 
     if (existingCategory) {
-      throw new Error("Category slug already exists");
+      throw new AppError("Category slug already exists", 409);
     }
 
     if (input.parentId) {
@@ -29,7 +30,7 @@ export class CreateCategory {
       );
 
       if (!parentCategory) {
-        throw new Error("Parent category not found");
+        throw new AppError("Parent category not found", 404);
       }
     }
 

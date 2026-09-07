@@ -2,6 +2,7 @@ import express from "express";
 import { checkMongoConnection } from "./shared/infrastructure/database/mongodb.js";
 import { checkPostgresConnection } from "./shared/infrastructure/database/postgres.js";
 import { categoryRouter } from "./modules/catalog/presentation/routes/category-routes.js";
+import { errorHandler } from "./shared/presentation/middlewares/error-handler.js";
 
 export const app = express();
 
@@ -29,3 +30,5 @@ app.get("/health", async (_req, res) => {
 });
 
 app.use("/categories", categoryRouter);
+
+app.use(errorHandler);
