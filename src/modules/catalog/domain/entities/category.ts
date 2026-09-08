@@ -77,4 +77,12 @@ export class Category {
   deactivate(): void {
     this.props.active = false;
   }
+
+  changeSlug(slug: string): void {
+    if (!slug.trim()) {
+      throw new Error("Category slug is required");
+    }
+
+    this.props.slug = slug;
+  }
 }
