@@ -12,7 +12,8 @@ const envSchema = z.object({
 
   DATABASE_URL: z.string(),
 
-  MONGODB_URI: z.string()
+  MONGODB_URI: z.string(),
+  MONGODB_TEST_URI: z.string()
 });
 
 export const env = envSchema.parse(process.env);
