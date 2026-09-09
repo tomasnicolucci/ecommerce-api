@@ -26,6 +26,33 @@ describe("CreateCategory", () => {
     expect(repository.categories).toHaveLength(1);
   });
 
+  it("should create a category with product and variant attributes", async () => {
+    const category = await createCategory.execute({
+      name: "Laptops",
+      slug: "laptops",
+      parentId: null,
+      attributes: [
+        {
+          name: "processor",
+          type: "string",
+          scope: "product",
+          required: true
+        },
+        {
+          name: "ram",
+          type: "select",
+          scope: "variant",
+          required: true,
+          options: ["8GB", "16GB", "32GB"]
+        }
+      ]
+    });
+
+    expect(category.attributes).toHaveLength(2);
+    expect(category.attributes[0]?.scope).toBe("product");
+    expect(category.attributes[1]?.scope).toBe("variant");
+  });
+
   it("should not create a category with an existing slug", async () => {
     await createCategory.execute({
       name: "Technology",
@@ -72,7 +99,14 @@ describe("CreateCategory", () => {
       name: "Laptops",
       slug: "laptops",
       parentId: parent.id,
-      attributes: []
+      attributes: [
+        {
+          name: "processor",
+          type: "string",
+          scope: "product",
+          required: true
+        }
+      ]
     });
 
     expect(category.parentId).toBe("technology-id");

@@ -20,6 +20,36 @@ describe("Category routes", () => {
     expect(response.body.id).toBeDefined();
   });
 
+  it("should create a category with product and variant attributes", async () => {
+    const response = await request(app)
+      .post("/categories")
+      .send({
+        name: "Laptops",
+        slug: "laptops",
+        parentId: null,
+        attributes: [
+          {
+            name: "processor",
+            type: "string",
+            scope: "product",
+            required: true
+          },
+          {
+            name: "ram",
+            type: "select",
+            scope: "variant",
+            required: true,
+            options: ["8GB", "16GB", "32GB"]
+          }
+        ]
+      });
+
+    expect(response.status).toBe(201);
+    expect(response.body.attributes).toHaveLength(2);
+    expect(response.body.attributes[0].scope).toBe("product");
+    expect(response.body.attributes[1].scope).toBe("variant");
+  });
+
   it("should get all categories", async () => {
     await request(app)
       .post("/categories")
@@ -69,11 +99,20 @@ describe("Category routes", () => {
     const response = await request(app)
       .patch(`/categories/${created.body.id}`)
       .send({
-        name: "Electronics"
+        name: "Electronics",
+        attributes: [
+          {
+            name: "brand",
+            type: "string",
+            scope: "product",
+            required: true
+          }
+        ]
       });
 
     expect(response.status).toBe(200);
     expect(response.body.name).toBe("Electronics");
+    expect(response.body.attributes[0].scope).toBe("product");
   });
 
   it("should deactivate a category", async () => {

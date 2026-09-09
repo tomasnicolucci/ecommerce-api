@@ -20,6 +20,11 @@ const attributeDefinitionSchema = new Schema<AttributeDefinition>(
       required: true,
       enum: ["string", "number", "boolean", "select"]
     },
+    scope: {
+      type: String,
+      required: true,
+      enum: ["product", "variant"]
+    },
     required: {
       type: Boolean,
       required: true

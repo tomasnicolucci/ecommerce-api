@@ -88,6 +88,48 @@ describe("Category", () => {
     expect(category.active).toBe(true);
   });
 
+  it("should change category attributes", () => {
+    const category = Category.create({
+      name: "Laptops",
+      slug: "laptops",
+      parentId: null,
+      attributes: [],
+      active: true
+    });
+
+    category.changeAttributes([
+      {
+        name: "processor",
+        type: "string",
+        scope: "product",
+        required: true
+      },
+      {
+        name: "ram",
+        type: "select",
+        scope: "variant",
+        required: true,
+        options: ["8GB", "16GB", "32GB"]
+      }
+    ]);
+
+    expect(category.attributes).toEqual([
+      {
+        name: "processor",
+        type: "string",
+        scope: "product",
+        required: true
+      },
+      {
+        name: "ram",
+        type: "select",
+        scope: "variant",
+        required: true,
+        options: ["8GB", "16GB", "32GB"]
+      }
+    ]);
+  });
+
   it("should not allow a category to be its own parent", () => {
     const category = Category.restore("category-1", {
       name: "Technology",
