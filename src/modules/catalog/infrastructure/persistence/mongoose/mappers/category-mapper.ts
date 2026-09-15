@@ -1,6 +1,6 @@
 import type { HydratedDocument } from "mongoose";
-import { Category } from "../../../domain/entities/category.js";
-import type { CategoryDocument } from "./category-schema.js";
+import { Category } from "../../../../domain/entities/category.js";
+import type { CategoryDocument } from "../schemas/category-schema.js";
 
 export class CategoryMapper {
   static toDomain(

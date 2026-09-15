@@ -2,8 +2,7 @@ import { Router } from "express";
 import { createCategoryController, deactivateCategoryController, getCategoriesController, getCategoryByIdController, updateCategoryController } from "../../catalog-container.js";
 import { validate } from "../../../../shared/presentation/middlewares/validate.js";
 import { asyncHandler } from "../../../../shared/presentation/middlewares/async-handler.js";
-import { createCategorySchema } from "../schemas/create-category-schema.js";
-import { updateCategorySchema } from "../schemas/update-category-schema.js";
+import { createCategorySchema, updateCategorySchema } from "../validators/category-validator.js";
 
 export const categoryRouter = Router();
 

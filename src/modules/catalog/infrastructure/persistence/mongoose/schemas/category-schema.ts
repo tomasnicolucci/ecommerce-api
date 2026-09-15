@@ -1,5 +1,5 @@
 import { Schema, model, type Types } from "mongoose";
-import type { AttributeDefinition } from "../../../domain/types/attribute-definition.js";
+import type { AttributeDefinition } from "../../../../domain/types/attribute-definition.js";
 
 export interface CategoryDocument {
   name: string;

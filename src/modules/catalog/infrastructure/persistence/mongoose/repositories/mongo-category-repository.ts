@@ -1,7 +1,7 @@
-import type { CategoryRepository } from "../../../domain/repositories/category-repository.js";
-import type { Category } from "../../../domain/entities/category.js";
-import { CategoryModel } from "./category-schema.js";
-import { CategoryMapper } from "./category-mapper.js";
+import type { CategoryRepository } from "../../../../domain/repositories/category-repository.js";
+import type { Category } from "../../../../domain/entities/category.js";
+import { CategoryModel } from "../schemas/category-schema.js";
+import { CategoryMapper } from "../mappers/category-mapper.js";
 
 export class MongoCategoryRepository implements CategoryRepository {
   async findById(id: string): Promise<Category | null> {

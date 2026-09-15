@@ -8,6 +8,15 @@ const attributeDefinitionSchema = z.object({
   options: z.array(z.string()).optional()
 });
 
+export const createCategorySchema = z.object({
+  body: z.object({
+    name: z.string().trim().min(1),
+    slug: z.string().trim().min(1),
+    parentId: z.string().nullable(),
+    attributes: z.array(attributeDefinitionSchema).default([])
+  })
+});
+
 export const updateCategorySchema = z.object({
   body: z.object({
     name: z.string().trim().min(1).optional(),
