@@ -1,6 +1,6 @@
-import type { CategoryRepository } from "../../domain/repositories/category-repository.js";
-import type { Category } from "../../domain/entities/category.js";
-import { AppError } from "../../../../shared/domain/errors/app-error.js";
+import type { CategoryRepository } from "../../../domain/repositories/category-repository.js";
+import type { Category } from "../../../domain/entities/category.js";
+import { AppError } from "../../../../../shared/domain/errors/app-error.js";
 
 export class GetCategoryById {
   constructor(

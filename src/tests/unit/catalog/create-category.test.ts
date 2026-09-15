@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it } from "vitest";
-import { CreateCategory } from "../../../modules/catalog/application/use-cases/create-category.js";
+import { CreateCategory } from "../../../modules/catalog/application/use-cases/category/create-category.js";
 import { Category } from "../../../modules/catalog/domain/entities/category.js";
 import { InMemoryCategoryRepository } from "../../helpers/in-memory-category-repository.js";
 

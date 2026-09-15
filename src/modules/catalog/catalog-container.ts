@@ -1,13 +1,13 @@
-import { CreateCategory } from "./application/use-cases/create-category.js";
+import { CreateCategory } from "./application/use-cases/category/create-category.js";
 import { MongoCategoryRepository } from "./infrastructure/persistence/mongoose/mongo-category-repository.js";
 import { CreateCategoryController } from "./presentation/controllers/create-category-controller.js";
-import { GetCategories } from "./application/use-cases/get-categories.js";
-import { GetCategoryById } from "./application/use-cases/get-category-by-id.js";
+import { GetCategories } from "./application/use-cases/category/get-categories.js";
+import { GetCategoryById } from "./application/use-cases/category/get-category-by-id.js";
 import { GetCategoriesController } from "./presentation/controllers/get-categories-controller.js";
 import { GetCategoryByIdController } from "./presentation/controllers/get-category-by-id-controller.js";
-import { UpdateCategory } from "./application/use-cases/update-category.js";
+import { UpdateCategory } from "./application/use-cases/category/update-category.js";
 import { UpdateCategoryController } from "./presentation/controllers/update-category-controller.js";
-import { DeactivateCategory } from "./application/use-cases/deactivate-category.js";
+import { DeactivateCategory } from "./application/use-cases/category/deactivate-category.js";
 import { DeactivateCategoryController } from "./presentation/controllers/deactivate-category-controller.js";
 
 const categoryRepository = new MongoCategoryRepository();

@@ -1,5 +1,5 @@
-import type { CategoryRepository } from "../../domain/repositories/category-repository.js";
-import { AppError } from "../../../../shared/domain/errors/app-error.js";
+import type { CategoryRepository } from "../../../domain/repositories/category-repository.js";
+import { AppError } from "../../../../../shared/domain/errors/app-error.js";
 
 export class DeactivateCategory {
   constructor(

@@ -1,7 +1,7 @@
-import type { CategoryRepository } from "../../domain/repositories/category-repository.js";
-import { Category } from "../../domain/entities/category.js";
-import type { AttributeDefinition } from "../../domain/types/attribute-definition.js";
-import { AppError } from "../../../../shared/domain/errors/app-error.js";
+import type { CategoryRepository } from "../../../domain/repositories/category-repository.js";
+import { Category } from "../../../domain/entities/category.js";
+import type { AttributeDefinition } from "../../../domain/types/attribute-definition.js";
+import { AppError } from "../../../../../shared/domain/errors/app-error.js";
 
 interface CreateCategoryInput {
   name: string;

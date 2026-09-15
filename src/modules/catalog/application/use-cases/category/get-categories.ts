@@ -1,5 +1,5 @@
-import type { CategoryRepository } from "../../domain/repositories/category-repository.js";
-import type { Category } from "../../domain/entities/category.js";
+import type { CategoryRepository } from "../../../domain/repositories/category-repository.js";
+import type { Category } from "../../../domain/entities/category.js";
 
 export class GetCategories {
   constructor(

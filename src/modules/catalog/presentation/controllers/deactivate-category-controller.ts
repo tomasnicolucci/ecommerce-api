@@ -1,5 +1,5 @@
 import type { Request, Response } from "express";
-import { DeactivateCategory } from "../../application/use-cases/deactivate-category.js";
+import { DeactivateCategory } from "../../application/use-cases/category/deactivate-category.js";
 
 export class DeactivateCategoryController {
   constructor(

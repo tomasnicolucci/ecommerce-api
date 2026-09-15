@@ -1,5 +1,5 @@
 import type { Request, Response } from "express";
-import { GetCategoryById } from "../../application/use-cases/get-category-by-id.js";
+import { GetCategoryById } from "../../application/use-cases/category/get-category-by-id.js";
 
 export class GetCategoryByIdController {
   constructor(

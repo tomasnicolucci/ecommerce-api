@@ -1,5 +1,5 @@
 import type { Request, Response } from "express";
-import { UpdateCategory } from "../../application/use-cases/update-category.js";
+import { UpdateCategory } from "../../application/use-cases/category/update-category.js";
 
 export class UpdateCategoryController {
   constructor(
