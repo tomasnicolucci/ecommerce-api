@@ -5,12 +5,19 @@ import { UpdateCategory } from "../../application/use-cases/category/update-cate
 import { GetCategoryById } from "../../application/use-cases/category/get-category-by-id.js";
 import { GetCategories } from "../../application/use-cases/category/get-categories.js";
 
-export class CreateCategoryController {
+export class CategoryController {
   constructor(
-    private readonly createCategory: CreateCategory
+    private readonly createCategory: CreateCategory,
+    private readonly getCategories: GetCategories,
+    private readonly getCategoryById: GetCategoryById,
+    private readonly updateCategory: UpdateCategory,
+    private readonly deactivateCategory: DeactivateCategory
   ) {}
 
-  async handle(req: Request, res: Response): Promise<void> {
+  create = async (
+    req: Request,
+    res: Response
+  ): Promise<void> => {
     const category = await this.createCategory.execute(req.body);
 
     res.status(201).json({
@@ -21,33 +28,12 @@ export class CreateCategoryController {
       attributes: category.attributes,
       active: category.active
     });
-  }
-}
+  };
 
-export class DeactivateCategoryController {
-  constructor(
-    private readonly deactivateCategory: DeactivateCategory
-  ) {}
-
-  async handle(req: Request, res: Response): Promise<void> {
-    const id = req.params.id;
-
-    if (typeof id !== "string") {
-      throw new Error("Invalid category id");
-    }
-
-    await this.deactivateCategory.execute(id);
-
-    res.status(204).send();
-  }
-}
-
-export class GetCategoriesController {
-  constructor(
-    private readonly getCategories: GetCategories
-  ) {}
-
-  async handle(_req: Request, res: Response): Promise<void> {
+  getAll = async (
+    _req: Request,
+    res: Response
+  ): Promise<void> => {
     const categories = await this.getCategories.execute();
 
     res.status(200).json(
@@ -60,15 +46,12 @@ export class GetCategoriesController {
         active: category.active
       }))
     );
-  }
-}
+  };
 
-export class GetCategoryByIdController {
-  constructor(
-    private readonly getCategoryById: GetCategoryById
-  ) {}
-
-  async handle(req: Request, res: Response): Promise<void> {
+  getById = async (
+    req: Request,
+    res: Response
+  ): Promise<void> => {
     const id = req.params.id;
 
     if (typeof id !== "string") {
@@ -85,15 +68,12 @@ export class GetCategoryByIdController {
       attributes: category.attributes,
       active: category.active
     });
-  }
-}
+  };
 
-export class UpdateCategoryController {
-  constructor(
-    private readonly updateCategory: UpdateCategory
-  ) {}
-
-  async handle(req: Request, res: Response): Promise<void> {
+  update = async (
+    req: Request,
+    res: Response
+  ): Promise<void> => {
     const id = req.params.id;
 
     if (typeof id !== "string") {
@@ -113,5 +93,20 @@ export class UpdateCategoryController {
       attributes: category.attributes,
       active: category.active
     });
-  }
+  };
+
+  deactivate = async (
+    req: Request,
+    res: Response
+  ): Promise<void> => {
+    const id = req.params.id;
+
+    if (typeof id !== "string") {
+      throw new Error("Invalid category id");
+    }
+
+    await this.deactivateCategory.execute(id);
+
+    res.status(204).send();
+  };
 }
