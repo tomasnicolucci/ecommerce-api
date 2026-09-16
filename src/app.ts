@@ -3,7 +3,7 @@ import { checkMongoConnection } from "./shared/infrastructure/database/mongodb.j
 import { checkPostgresConnection } from "./shared/infrastructure/database/postgres.js";
 import { categoryRouter } from "./modules/catalog/presentation/routes/category-routes.js";
 import { errorHandler } from "./shared/presentation/middlewares/error-handler.js";
-import { productRouter } from "./modules/catalog/presentation/routes/product-router.js";
+import { productRouter } from "./modules/catalog/presentation/routes/product-routes.js";
 
 export const app = express();
 

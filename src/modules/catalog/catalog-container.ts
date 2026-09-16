@@ -1,3 +1,5 @@
+// CATEGORY
+
 import { CreateCategory } from "./application/use-cases/category/create-category.js";
 import { MongoCategoryRepository } from "./infrastructure/persistence/mongoose/repositories/mongo-category-repository.js";
 import { GetCategories } from "./application/use-cases/category/get-categories.js";
@@ -18,3 +20,18 @@ export const getCategoriesController = new GetCategoriesController(getCategories
 export const getCategoryByIdController = new GetCategoryByIdController(getCategoryById);
 export const updateCategoryController = new UpdateCategoryController(updateCategory);
 export const deactivateCategoryController = new DeactivateCategoryController(deactivateCategory);
+
+// PRODUCT
+
+import { CreateProduct } from "./application/use-cases/product/create-product.js";
+import { GetProducts } from "./application/use-cases/product/get-products.js";
+import { GetProductById } from "./application/use-cases/product/get-product-by-id.js";
+import { MongoProductRepository } from "./infrastructure/persistence/mongoose/repositories/mongo-product-repository.js";
+import { ProductController } from "./presentation/controllers/product-controller.js";
+
+const productRepository = new MongoProductRepository();
+const createProduct = new CreateProduct(productRepository, categoryRepository);
+const getProducts = new GetProducts(productRepository);
+const getProductById = new GetProductById(productRepository);
+
+export const productController = new ProductController(createProduct, getProducts, getProductById);
