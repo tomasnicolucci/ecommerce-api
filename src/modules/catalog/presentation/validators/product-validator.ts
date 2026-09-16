@@ -30,3 +30,13 @@ export const createProductSchema = z.object({
     variants: z.array(productVariantSchema)
   })
 });
+
+export const updateProductSchema = z.object({
+  body: z.object({
+    name: z.string().trim().min(1).optional(),
+    slug: z.string().trim().min(1).optional(),
+    description: z.string().optional(),
+    categoryId: z.string().trim().min(1).optional(),
+    attributes: attributesSchema.optional()
+  })
+});

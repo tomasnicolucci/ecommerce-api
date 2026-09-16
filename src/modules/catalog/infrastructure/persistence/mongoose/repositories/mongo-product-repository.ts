@@ -68,4 +68,8 @@ export class MongoProductRepository implements ProductRepository {
       persistenceData
     );
   }
+  
+  async delete(id: string): Promise<void> {
+    await ProductModel.findByIdAndDelete(id);
+  }
 }

@@ -26,6 +26,8 @@ export const deactivateCategoryController = new DeactivateCategoryController(dea
 import { CreateProduct } from "./application/use-cases/product/create-product.js";
 import { GetProducts } from "./application/use-cases/product/get-products.js";
 import { GetProductById } from "./application/use-cases/product/get-product-by-id.js";
+import { UpdateProduct } from "./application/use-cases/product/update-product.js";
+import { DeleteProduct } from "./application/use-cases/product/delete-product.js";
 import { MongoProductRepository } from "./infrastructure/persistence/mongoose/repositories/mongo-product-repository.js";
 import { ProductController } from "./presentation/controllers/product-controller.js";
 
@@ -33,5 +35,7 @@ const productRepository = new MongoProductRepository();
 const createProduct = new CreateProduct(productRepository, categoryRepository);
 const getProducts = new GetProducts(productRepository);
 const getProductById = new GetProductById(productRepository);
+const updateProduct = new UpdateProduct(productRepository, categoryRepository);
+const deleteProduct = new DeleteProduct(productRepository);
 
-export const productController = new ProductController(createProduct, getProducts, getProductById);
+export const productController = new ProductController(createProduct, getProducts, getProductById, updateProduct, deleteProduct);

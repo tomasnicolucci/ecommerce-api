@@ -248,4 +248,104 @@ describe("Product routes", () => {
 
     expect(response.body.active).toBe(true);
   });
+
+  it("should update a product", async () => {
+    const categoryResponse = await request(app)
+      .post("/categories")
+      .send({
+        name: "Smartphones",
+        slug: "smartphones",
+        parentId: null,
+        attributes: [
+          {
+            name: "brand",
+            type: "string",
+            scope: "product",
+            required: true
+          }
+        ]
+      });
+
+    const productResponse = await request(app)
+      .post("/products")
+      .send({
+        name: "Samsung Galaxy S25",
+        slug: "samsung-galaxy-s25",
+        description: "Original description",
+        categoryId: categoryResponse.body.id,
+        attributes: {
+          brand: "Samsung"
+        },
+        variants: []
+      });
+
+    const response = await request(app)
+      .patch(`/products/${productResponse.body.id}`)
+      .send({
+        name: "Samsung Galaxy S25 Ultra",
+        slug: "samsung-galaxy-s25-ultra",
+        description: "Updated description"
+      });
+
+    expect(response.status).toBe(200);
+    expect(response.body.id).toBe(productResponse.body.id);
+    expect(response.body.name).toBe(
+      "Samsung Galaxy S25 Ultra"
+    );
+    expect(response.body.slug).toBe(
+      "samsung-galaxy-s25-ultra"
+    );
+    expect(response.body.description).toBe(
+      "Updated description"
+    );
+
+    expect(response.body.categoryId).toBe(
+      categoryResponse.body.id
+    );
+
+    expect(response.body.attributes).toEqual({
+      brand: "Samsung"
+    });
+  });
+
+  it("should delete a product", async () => {
+    const categoryResponse = await request(app)
+      .post("/categories")
+      .send({
+        name: "Smartphones",
+        slug: "smartphones",
+        parentId: null,
+        attributes: [
+          {
+            name: "brand",
+            type: "string",
+            scope: "product",
+            required: true
+          }
+        ]
+      });
+
+    const productResponse = await request(app)
+      .post("/products")
+      .send({
+        name: "Samsung Galaxy S25",
+        slug: "samsung-galaxy-s25",
+        description: "Samsung Galaxy S25 smartphone",
+        categoryId: categoryResponse.body.id,
+        attributes: {
+          brand: "Samsung"
+        },
+        variants: []
+      });
+
+    const deleteResponse = await request(app)
+      .delete(`/products/${productResponse.body.id}`);
+
+    expect(deleteResponse.status).toBe(204);
+
+    const getResponse = await request(app)
+      .get(`/products/${productResponse.body.id}`);
+
+    expect(getResponse.status).toBe(404);
+  });
 });
