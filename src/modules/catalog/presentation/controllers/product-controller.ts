@@ -9,6 +9,7 @@ import { GetProductVariants } from "../../application/use-cases/product/get-prod
 import { GetProductVariantById } from "../../application/use-cases/product/get-product-variant-by-id.js";
 import { ProductVariantResponseMapper } from "../mappers/product-variant-response-mapper.js";
 import { CreateProductVariant } from "../../application/use-cases/product/create-product-variant.js";
+import { UpdateProductVariant } from "../../application/use-cases/product/update-product-variant.js";
 
 export class ProductController {
   constructor(
@@ -19,7 +20,8 @@ export class ProductController {
     private readonly deleteProduct: DeleteProduct,
     private readonly getProductVariants: GetProductVariants,
     private readonly getProductVariantById: GetProductVariantById,
-    private readonly createProductVariant: CreateProductVariant
+    private readonly createProductVariant: CreateProductVariant,
+    private readonly updateProductVariant: UpdateProductVariant
   ) { }
 
   create = async (
@@ -157,6 +159,31 @@ export class ProductController {
     );
 
     res.status(201).json(
+      ProductVariantResponseMapper.toResponse(variant)
+    );
+  };
+
+  updateVariant = async (
+    req: Request,
+    res: Response
+  ): Promise<void> => {
+    const productId = req.params.productId;
+    const variantId = req.params.variantId;
+
+    if (
+      typeof productId !== "string" ||
+      typeof variantId !== "string"
+    ) {
+      throw new Error("Invalid product or variant id");
+    }
+
+    const variant = await this.updateProductVariant.execute(
+      productId,
+      variantId,
+      req.body
+    );
+
+    res.status(200).json(
       ProductVariantResponseMapper.toResponse(variant)
     );
   };

@@ -51,3 +51,14 @@ export const createProductVariantSchema = z.object({
     })
   })
 });
+
+export const updateProductVariantSchema = z.object({
+  body: z.object({
+    sku: z.string().trim().min(1).optional(),
+    attributes: attributesSchema.optional(),
+    price: z.object({
+      amount: z.number().nonnegative(),
+      currency: z.string().trim().length(3)
+    }).optional()
+  })
+});

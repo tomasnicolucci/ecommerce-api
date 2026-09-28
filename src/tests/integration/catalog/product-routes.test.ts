@@ -514,4 +514,73 @@ describe("Product routes", () => {
     });
     expect(response.body.active).toBe(true);
   });
+
+  it("should update a product variant", async () => {
+    const categoryResponse = await request(app)
+      .post("/categories")
+      .send({
+        name: "Smartphones",
+        slug: "smartphones",
+        parentId: null,
+        attributes: [
+          {
+            name: "color",
+            type: "string",
+            scope: "variant",
+            required: true
+          }
+        ]
+      });
+
+    const productResponse = await request(app)
+      .post("/products")
+      .send({
+        name: "Samsung Galaxy S25",
+        slug: "samsung-galaxy-s25",
+        description: "Samsung Galaxy S25 smartphone",
+        categoryId: categoryResponse.body.id,
+        attributes: {},
+        variants: [
+          {
+            sku: "S25-BLACK",
+            attributes: {
+              color: "black"
+            },
+            price: {
+              amount: 1200,
+              currency: "USD"
+            }
+          }
+        ]
+      });
+
+    const variantId = productResponse.body.variants[0].id;
+
+    const response = await request(app)
+      .patch(
+        `/products/${productResponse.body.id}/variants/${variantId}`
+      )
+      .send({
+        sku: "S25-BLUE",
+        attributes: {
+          color: "blue"
+        },
+        price: {
+          amount: 1250,
+          currency: "USD"
+        }
+      });
+
+    expect(response.status).toBe(200);
+    expect(response.body.id).toBe(variantId);
+    expect(response.body.sku).toBe("S25-BLUE");
+    expect(response.body.attributes).toEqual({
+      color: "blue"
+    });
+    expect(response.body.price).toEqual({
+      amount: 1250,
+      currency: "USD"
+    });
+    expect(response.body.active).toBe(true);
+  });
 });

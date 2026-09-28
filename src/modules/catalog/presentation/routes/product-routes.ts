@@ -2,7 +2,7 @@ import { Router } from "express";
 import { productController } from "../../catalog-container.js";
 import { validate } from "../../../../shared/presentation/middlewares/validate.js";
 import { asyncHandler } from "../../../../shared/presentation/middlewares/async-handler.js";
-import { createProductSchema, createProductVariantSchema, updateProductSchema } from "../validators/product-validator.js";
+import { createProductSchema, createProductVariantSchema, updateProductSchema, updateProductVariantSchema } from "../validators/product-validator.js";
 
 export const productRouter = Router();
 
@@ -62,5 +62,13 @@ productRouter.post(
   validate(createProductVariantSchema),
   asyncHandler((req, res) =>
     productController.createVariant(req, res)
+  )
+);
+
+productRouter.patch(
+  "/:productId/variants/:variantId",
+  validate(updateProductVariantSchema),
+  asyncHandler((req, res) =>
+    productController.updateVariant(req, res)
   )
 );

@@ -12,7 +12,7 @@ export class ProductVariant {
   private constructor(
     public readonly id: string | null,
     private props: ProductVariantProps
-  ) {}
+  ) { }
 
   static create(props: ProductVariantProps): ProductVariant {
     if (!props.sku.trim()) {
@@ -59,5 +59,13 @@ export class ProductVariant {
 
   deactivate(): void {
     this.props.active = false;
+  }
+
+  changeSku(sku: string): void {
+    if (!sku.trim()) {
+      throw new Error("Product variant SKU is required");
+    }
+
+    this.props.sku = sku;
   }
 }
