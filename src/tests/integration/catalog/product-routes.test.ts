@@ -583,4 +583,60 @@ describe("Product routes", () => {
     });
     expect(response.body.active).toBe(true);
   });
+
+  it("should delete a product variant", async () => {
+    const categoryResponse = await request(app)
+      .post("/categories")
+      .send({
+        name: "Smartphones",
+        slug: "smartphones",
+        parentId: null,
+        attributes: [
+          {
+            name: "color",
+            type: "string",
+            scope: "variant",
+            required: true
+          }
+        ]
+      });
+
+    const productResponse = await request(app)
+      .post("/products")
+      .send({
+        name: "Samsung Galaxy S25",
+        slug: "samsung-galaxy-s25",
+        description: "Samsung Galaxy S25 smartphone",
+        categoryId: categoryResponse.body.id,
+        attributes: {},
+        variants: [
+          {
+            sku: "S25-BLACK",
+            attributes: {
+              color: "black"
+            },
+            price: {
+              amount: 1200,
+              currency: "USD"
+            }
+          }
+        ]
+      });
+
+    const variantId = productResponse.body.variants[0].id;
+
+    const deleteResponse = await request(app)
+      .delete(
+        `/products/${productResponse.body.id}/variants/${variantId}`
+      );
+
+    expect(deleteResponse.status).toBe(204);
+
+    const getResponse = await request(app)
+      .get(
+        `/products/${productResponse.body.id}/variants/${variantId}`
+      );
+
+    expect(getResponse.status).toBe(404);
+  });
 });

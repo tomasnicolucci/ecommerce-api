@@ -72,3 +72,10 @@ productRouter.patch(
     productController.updateVariant(req, res)
   )
 );
+
+productRouter.delete(
+  "/:productId/variants/:variantId",
+  asyncHandler((req, res) =>
+    productController.deleteVariant(req, res)
+  )
+);

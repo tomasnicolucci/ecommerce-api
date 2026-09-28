@@ -15,7 +15,7 @@ export class Product {
   private constructor(
     public readonly id: string | null,
     private props: ProductProps
-  ) {}
+  ) { }
 
   static create(props: ProductProps): Product {
     if (!props.name.trim()) {
@@ -110,6 +110,18 @@ export class Product {
     }
 
     this.props.variants.push(variant);
+  }
+
+  removeVariant(variantId: string): void {
+    const index = this.props.variants.findIndex(
+      (variant) => variant.id === variantId
+    );
+
+    if (index === -1) {
+      throw new Error("Product variant not found");
+    }
+
+    this.props.variants.splice(index, 1);
   }
 
   activate(): void {
