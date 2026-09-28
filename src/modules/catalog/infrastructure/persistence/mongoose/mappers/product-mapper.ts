@@ -27,6 +27,7 @@ export class ProductMapper {
         description: document.description,
         categoryId: document.categoryId.toString(),
         attributes: document.attributes,
+        hasVariants: document.hasVariants,
         variants,
         active: document.active
       }
@@ -40,6 +41,7 @@ export class ProductMapper {
       description: product.description,
       categoryId: product.categoryId,
       attributes: product.attributes,
+      hasVariants: product.hasVariants,
       variants: product.variants.map((variant) => ({
         ...(variant.id && { _id: variant.id }),
         sku: variant.sku,

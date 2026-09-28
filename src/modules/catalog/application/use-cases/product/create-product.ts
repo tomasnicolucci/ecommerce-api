@@ -16,14 +16,33 @@ interface CreateProductVariantInput {
   };
 }
 
-interface CreateProductInput {
+interface CreateProductWithVariantsInput {
   name: string;
   slug: string;
   description: string;
   categoryId: string;
   attributes: ProductAttributes;
+  hasVariants: true;
   variants: CreateProductVariantInput[];
 }
+
+interface CreateProductWithoutVariantsInput {
+  name: string;
+  slug: string;
+  description: string;
+  categoryId: string;
+  attributes: ProductAttributes;
+  hasVariants: false;
+  sku: string;
+  price: {
+    amount: number;
+    currency: string;
+  };
+}
+
+type CreateProductInput =
+  | CreateProductWithVariantsInput
+  | CreateProductWithoutVariantsInput;
 
 export class CreateProduct {
   constructor(
@@ -65,33 +84,75 @@ export class CreateProduct {
 
     const variants: ProductVariant[] = [];
 
-    for (const variantInput of input.variants) {
+    if (input.hasVariants) {
+      if (input.variants.length === 0) {
+        throw new AppError(
+          "Product with variants must have at least one variant",
+          400
+        );
+      }
+
+      const inputSkus = new Set<string>();
+
+      for (const variantInput of input.variants) {
+        if (inputSkus.has(variantInput.sku)) {
+          throw new AppError(
+            `Product variant SKU "${variantInput.sku}" is duplicated`,
+            409
+          );
+        }
+
+        inputSkus.add(variantInput.sku);
+
+        const existingSku =
+          await this.productRepository.findBySku(variantInput.sku);
+
+        if (existingSku) {
+          throw new AppError(
+            `Product variant SKU "${variantInput.sku}" already exists`,
+            409
+          );
+        }
+
+        ProductAttributeValidator.validate(
+          variantInput.attributes,
+          variantAttributeDefinitions
+        );
+
+        variants.push(
+          ProductVariant.create({
+            sku: variantInput.sku,
+            attributes: variantInput.attributes,
+            price: Money.create(
+              variantInput.price.amount,
+              variantInput.price.currency
+            ),
+            active: true
+          })
+        );
+      }
+    } else {
       const existingSku =
-        await this.productRepository.findBySku(variantInput.sku);
+        await this.productRepository.findBySku(input.sku);
 
       if (existingSku) {
         throw new AppError(
-          `Product variant SKU "${variantInput.sku}" already exists`,
+          `Product variant SKU "${input.sku}" already exists`,
           409
         );
       }
 
-      ProductAttributeValidator.validate(
-        variantInput.attributes,
-        variantAttributeDefinitions
+      variants.push(
+        ProductVariant.create({
+          sku: input.sku,
+          attributes: {},
+          price: Money.create(
+            input.price.amount,
+            input.price.currency
+          ),
+          active: true
+        })
       );
-
-      const variant = ProductVariant.create({
-        sku: variantInput.sku,
-        attributes: variantInput.attributes,
-        price: Money.create(
-          variantInput.price.amount,
-          variantInput.price.currency
-        ),
-        active: true
-      });
-
-      variants.push(variant);
     }
 
     const product = Product.create({
@@ -100,6 +161,7 @@ export class CreateProduct {
       description: input.description,
       categoryId: input.categoryId,
       attributes: input.attributes,
+      hasVariants: input.hasVariants,
       variants,
       active: true
     });

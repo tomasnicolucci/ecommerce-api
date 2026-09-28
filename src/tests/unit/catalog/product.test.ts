@@ -14,6 +14,7 @@ describe("Product", () => {
         brand: "Lenovo",
         processor: "Ryzen 7"
       },
+      hasVariants: true,
       variants: [],
       active: true
     });
@@ -34,6 +35,7 @@ describe("Product", () => {
         description: "",
         categoryId: "category-1",
         attributes: {},
+        hasVariants: true,
         variants: [],
         active: true
       })
@@ -48,6 +50,7 @@ describe("Product", () => {
         description: "",
         categoryId: "category-1",
         attributes: {},
+        hasVariants: true,
         variants: [],
         active: true
       })
@@ -62,6 +65,7 @@ describe("Product", () => {
         description: "",
         categoryId: "",
         attributes: {},
+        hasVariants: true,
         variants: [],
         active: true
       })
@@ -75,6 +79,7 @@ describe("Product", () => {
       description: "",
       categoryId: "category-1",
       attributes: {},
+      hasVariants: true,
       variants: [],
       active: true
     });
@@ -109,6 +114,7 @@ describe("Product", () => {
       description: "",
       categoryId: "category-1",
       attributes: {},
+      hasVariants: true,
       variants: [firstVariant],
       active: true
     });
@@ -132,6 +138,7 @@ describe("Product", () => {
       description: "",
       categoryId: "category-1",
       attributes: {},
+      hasVariants: true,
       variants: [],
       active: true
     });

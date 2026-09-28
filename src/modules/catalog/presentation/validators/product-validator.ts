@@ -20,15 +20,29 @@ const productVariantSchema = z.object({
   })
 });
 
+const baseProductSchema = z.object({
+  name: z.string().trim().min(1),
+  slug: z.string().trim().min(1),
+  description: z.string(),
+  categoryId: z.string().trim().min(1),
+  attributes: attributesSchema
+});
+
 export const createProductSchema = z.object({
-  body: z.object({
-    name: z.string().trim().min(1),
-    slug: z.string().trim().min(1),
-    description: z.string(),
-    categoryId: z.string().trim().min(1),
-    attributes: attributesSchema,
-    variants: z.array(productVariantSchema)
-  })
+  body: z.discriminatedUnion("hasVariants", [
+    baseProductSchema.extend({
+      hasVariants: z.literal(true),
+      variants: z.array(productVariantSchema).min(1)
+    }),
+    baseProductSchema.extend({
+      hasVariants: z.literal(false),
+      sku: z.string().trim().min(1),
+      price: z.object({
+        amount: z.number().nonnegative(),
+        currency: z.string().trim().length(3)
+      })
+    })
+  ])
 });
 
 export const updateProductSchema = z.object({

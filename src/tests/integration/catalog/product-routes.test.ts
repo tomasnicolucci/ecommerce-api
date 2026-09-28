@@ -53,6 +53,7 @@ describe("Product routes", () => {
           brand: "Samsung",
           model: "Galaxy S25"
         },
+        hasVariants: true,
         variants: [
           {
             sku: "S25-BLK-128",
@@ -80,10 +81,10 @@ describe("Product routes", () => {
       });
 
     expect(response.status).toBe(201);
-
     expect(response.body.name).toBe("Samsung Galaxy S25");
     expect(response.body.slug).toBe("samsung-galaxy-s25");
     expect(response.body.categoryId).toBe(categoryResponse.body.id);
+    expect(response.body.hasVariants).toBe(true);
 
     expect(response.body.attributes).toEqual({
       brand: "Samsung",
@@ -91,10 +92,7 @@ describe("Product routes", () => {
     });
 
     expect(response.body.variants).toHaveLength(2);
-
-    expect(response.body.variants[0].sku).toBe(
-      "S25-BLK-128"
-    );
+    expect(response.body.variants[0].sku).toBe("S25-BLK-128");
 
     expect(response.body.variants[0].price).toEqual({
       amount: 899,
@@ -130,10 +128,15 @@ describe("Product routes", () => {
         description: "",
         categoryId: categoryResponse.body.id,
         attributes: {},
-        variants: []
+        hasVariants: false,
+        sku: "S25-DEFAULT",
+        price: {
+          amount: 899,
+          currency: "USD"
+        }
       });
 
-    expect(response.status).toBe(500);
+    expect(response.status).toBe(400);
   });
 
   it("should get all products", async () => {
@@ -163,7 +166,12 @@ describe("Product routes", () => {
         attributes: {
           brand: "Samsung"
         },
-        variants: []
+        hasVariants: false,
+        sku: "S25-DEFAULT",
+        price: {
+          amount: 899,
+          currency: "USD"
+        }
       });
 
     expect(productResponse.status).toBe(201);
@@ -173,19 +181,11 @@ describe("Product routes", () => {
 
     expect(response.status).toBe(200);
     expect(response.body).toHaveLength(1);
-
-    expect(response.body[0].name).toBe(
-      "Samsung Galaxy S25"
-    );
-
-    expect(response.body[0].slug).toBe(
-      "samsung-galaxy-s25"
-    );
-
-    expect(response.body[0].categoryId).toBe(
-      categoryResponse.body.id
-    );
-
+    expect(response.body[0].name).toBe("Samsung Galaxy S25");
+    expect(response.body[0].slug).toBe("samsung-galaxy-s25");
+    expect(response.body[0].categoryId).toBe(categoryResponse.body.id);
+    expect(response.body[0].hasVariants).toBe(false);
+    expect(response.body[0].variants).toHaveLength(1);
     expect(response.body[0].active).toBe(true);
   });
 
@@ -216,7 +216,12 @@ describe("Product routes", () => {
         attributes: {
           brand: "Samsung"
         },
-        variants: []
+        hasVariants: false,
+        sku: "S25-DEFAULT",
+        price: {
+          amount: 899,
+          currency: "USD"
+        }
       });
 
     expect(productResponse.status).toBe(201);
@@ -225,27 +230,17 @@ describe("Product routes", () => {
       .get(`/products/${productResponse.body.id}`);
 
     expect(response.status).toBe(200);
-
-    expect(response.body.id).toBe(
-      productResponse.body.id
-    );
-
-    expect(response.body.name).toBe(
-      "Samsung Galaxy S25"
-    );
-
-    expect(response.body.slug).toBe(
-      "samsung-galaxy-s25"
-    );
-
-    expect(response.body.categoryId).toBe(
-      categoryResponse.body.id
-    );
+    expect(response.body.id).toBe(productResponse.body.id);
+    expect(response.body.name).toBe("Samsung Galaxy S25");
+    expect(response.body.slug).toBe("samsung-galaxy-s25");
+    expect(response.body.categoryId).toBe(categoryResponse.body.id);
 
     expect(response.body.attributes).toEqual({
       brand: "Samsung"
     });
 
+    expect(response.body.hasVariants).toBe(false);
+    expect(response.body.variants).toHaveLength(1);
     expect(response.body.active).toBe(true);
   });
 
@@ -276,8 +271,15 @@ describe("Product routes", () => {
         attributes: {
           brand: "Samsung"
         },
-        variants: []
+        hasVariants: false,
+        sku: "S25-DEFAULT",
+        price: {
+          amount: 899,
+          currency: "USD"
+        }
       });
+
+    expect(productResponse.status).toBe(201);
 
     const response = await request(app)
       .patch(`/products/${productResponse.body.id}`)
@@ -289,23 +291,17 @@ describe("Product routes", () => {
 
     expect(response.status).toBe(200);
     expect(response.body.id).toBe(productResponse.body.id);
-    expect(response.body.name).toBe(
-      "Samsung Galaxy S25 Ultra"
-    );
-    expect(response.body.slug).toBe(
-      "samsung-galaxy-s25-ultra"
-    );
-    expect(response.body.description).toBe(
-      "Updated description"
-    );
-
-    expect(response.body.categoryId).toBe(
-      categoryResponse.body.id
-    );
+    expect(response.body.name).toBe("Samsung Galaxy S25 Ultra");
+    expect(response.body.slug).toBe("samsung-galaxy-s25-ultra");
+    expect(response.body.description).toBe("Updated description");
+    expect(response.body.categoryId).toBe(categoryResponse.body.id);
 
     expect(response.body.attributes).toEqual({
       brand: "Samsung"
     });
+
+    expect(response.body.hasVariants).toBe(false);
+    expect(response.body.variants).toHaveLength(1);
   });
 
   it("should delete a product", async () => {
@@ -335,8 +331,15 @@ describe("Product routes", () => {
         attributes: {
           brand: "Samsung"
         },
-        variants: []
+        hasVariants: false,
+        sku: "S25-DEFAULT",
+        price: {
+          amount: 899,
+          currency: "USD"
+        }
       });
+
+    expect(productResponse.status).toBe(201);
 
     const deleteResponse = await request(app)
       .delete(`/products/${productResponse.body.id}`);
@@ -374,6 +377,7 @@ describe("Product routes", () => {
         description: "Samsung Galaxy S25 smartphone",
         categoryId: categoryResponse.body.id,
         attributes: {},
+        hasVariants: true,
         variants: [
           {
             sku: "S25-BLACK",
@@ -388,15 +392,19 @@ describe("Product routes", () => {
         ]
       });
 
+    expect(productResponse.status).toBe(201);
+
     const response = await request(app)
       .get(`/products/${productResponse.body.id}/variants`);
 
     expect(response.status).toBe(200);
     expect(response.body).toHaveLength(1);
     expect(response.body[0].sku).toBe("S25-BLACK");
+
     expect(response.body[0].attributes).toEqual({
       color: "black"
     });
+
     expect(response.body[0].price).toEqual({
       amount: 1200,
       currency: "USD"
@@ -428,6 +436,7 @@ describe("Product routes", () => {
         description: "Samsung Galaxy S25 smartphone",
         categoryId: categoryResponse.body.id,
         attributes: {},
+        hasVariants: true,
         variants: [
           {
             sku: "S25-BLACK",
@@ -442,6 +451,8 @@ describe("Product routes", () => {
         ]
       });
 
+    expect(productResponse.status).toBe(201);
+
     const variantId = productResponse.body.variants[0].id;
 
     const response = await request(app)
@@ -452,9 +463,11 @@ describe("Product routes", () => {
     expect(response.status).toBe(200);
     expect(response.body.id).toBe(variantId);
     expect(response.body.sku).toBe("S25-BLACK");
+
     expect(response.body.attributes).toEqual({
       color: "black"
     });
+
     expect(response.body.price).toEqual({
       amount: 1200,
       currency: "USD"
@@ -486,8 +499,22 @@ describe("Product routes", () => {
         description: "Samsung Galaxy S25 smartphone",
         categoryId: categoryResponse.body.id,
         attributes: {},
-        variants: []
+        hasVariants: true,
+        variants: [
+          {
+            sku: "S25-WHITE",
+            attributes: {
+              color: "white"
+            },
+            price: {
+              amount: 1200,
+              currency: "USD"
+            }
+          }
+        ]
       });
+
+    expect(productResponse.status).toBe(201);
 
     const response = await request(app)
       .post(`/products/${productResponse.body.id}/variants`)
@@ -505,13 +532,16 @@ describe("Product routes", () => {
     expect(response.status).toBe(201);
     expect(response.body.id).toBeDefined();
     expect(response.body.sku).toBe("S25-BLACK");
+
     expect(response.body.attributes).toEqual({
       color: "black"
     });
+
     expect(response.body.price).toEqual({
       amount: 1200,
       currency: "USD"
     });
+
     expect(response.body.active).toBe(true);
   });
 
@@ -540,6 +570,7 @@ describe("Product routes", () => {
         description: "Samsung Galaxy S25 smartphone",
         categoryId: categoryResponse.body.id,
         attributes: {},
+        hasVariants: true,
         variants: [
           {
             sku: "S25-BLACK",
@@ -553,6 +584,8 @@ describe("Product routes", () => {
           }
         ]
       });
+
+    expect(productResponse.status).toBe(201);
 
     const variantId = productResponse.body.variants[0].id;
 
@@ -574,13 +607,16 @@ describe("Product routes", () => {
     expect(response.status).toBe(200);
     expect(response.body.id).toBe(variantId);
     expect(response.body.sku).toBe("S25-BLUE");
+
     expect(response.body.attributes).toEqual({
       color: "blue"
     });
+
     expect(response.body.price).toEqual({
       amount: 1250,
       currency: "USD"
     });
+
     expect(response.body.active).toBe(true);
   });
 
@@ -609,6 +645,7 @@ describe("Product routes", () => {
         description: "Samsung Galaxy S25 smartphone",
         categoryId: categoryResponse.body.id,
         attributes: {},
+        hasVariants: true,
         variants: [
           {
             sku: "S25-BLACK",
@@ -622,6 +659,8 @@ describe("Product routes", () => {
           }
         ]
       });
+
+    expect(productResponse.status).toBe(201);
 
     const variantId = productResponse.body.variants[0].id;
 
@@ -638,5 +677,53 @@ describe("Product routes", () => {
       );
 
     expect(getResponse.status).toBe(404);
+  });
+
+  it("should create a product without variants using a default variant", async () => {
+    const categoryResponse = await request(app)
+      .post("/categories")
+      .send({
+        name: "Accessories",
+        slug: "accessories",
+        parentId: null,
+        attributes: [
+          {
+            name: "brand",
+            type: "string",
+            scope: "product",
+            required: true
+          }
+        ]
+      });
+
+    const response = await request(app)
+      .post("/products")
+      .send({
+        name: "Logitech MX Master 3S",
+        slug: "logitech-mx-master-3s",
+        description: "Wireless mouse",
+        categoryId: categoryResponse.body.id,
+        attributes: {
+          brand: "Logitech"
+        },
+        hasVariants: false,
+        sku: "LOG-MX3S",
+        price: {
+          amount: 120,
+          currency: "USD"
+        }
+      });
+
+    expect(response.status).toBe(201);
+    expect(response.body.hasVariants).toBe(false);
+    expect(response.body.variants).toHaveLength(1);
+    expect(response.body.variants[0].id).toBeDefined();
+    expect(response.body.variants[0].sku).toBe("LOG-MX3S");
+    expect(response.body.variants[0].attributes).toEqual({});
+
+    expect(response.body.variants[0].price).toEqual({
+      amount: 120,
+      currency: "USD"
+    });
   });
 });

@@ -3,6 +3,7 @@ import type {
 } from "express";
 import { ZodError } from "zod";
 import { AppError } from "../../domain/errors/app-error.js";
+import { ValidationError } from "../../domain/errors/validation-error.js";
 
 export const errorHandler: ErrorRequestHandler = (
   error,
@@ -14,6 +15,13 @@ export const errorHandler: ErrorRequestHandler = (
     res.status(400).json({
       message: "Validation error",
       errors: error.issues
+    });
+    return;
+  }
+
+  if (error instanceof ValidationError) {
+    res.status(400).json({
+      message: error.message
     });
     return;
   }

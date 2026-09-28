@@ -33,6 +33,7 @@ export class InMemoryProductRepository implements ProductRepository {
         description: product.description,
         categoryId: product.categoryId,
         attributes: product.attributes,
+        hasVariants: product.hasVariants,
         variants: product.variants,
         active: product.active
       }

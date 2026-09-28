@@ -63,6 +63,10 @@ const productSchema = new Schema(
       required: true,
       default: {}
     },
+    hasVariants: {
+      type: Boolean,
+      required: true
+    },
     variants: {
       type: [productVariantSchema],
       required: true,

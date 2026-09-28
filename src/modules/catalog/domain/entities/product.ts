@@ -7,6 +7,7 @@ interface ProductProps {
   description: string;
   categoryId: string;
   attributes: ProductAttributes;
+  hasVariants: boolean;
   variants: ProductVariant[];
   active: boolean;
 }
@@ -58,6 +59,10 @@ export class Product {
 
   get attributes(): ProductAttributes {
     return { ...this.props.attributes };
+  }
+
+  get hasVariants(): boolean {
+    return this.props.hasVariants;
   }
 
   get variants(): ProductVariant[] {

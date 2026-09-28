@@ -9,6 +9,7 @@ export class ProductResponseMapper {
       description: product.description,
       categoryId: product.categoryId,
       attributes: product.attributes,
+      hasVariants: product.hasVariants,
       variants: product.variants.map((variant) => ({
         id: variant.id,
         sku: variant.sku,

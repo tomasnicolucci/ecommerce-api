@@ -1,3 +1,4 @@
+import { ValidationError } from "../../../../shared/domain/errors/validation-error.js";
 import type { AttributeDefinition } from "../types/attribute-definition.js";
 import type {
   AttributeValue,
@@ -17,7 +18,9 @@ export class ProductAttributeValidator {
       );
 
       if (!definition) {
-        throw new Error(`Attribute "${name}" is not allowed`);
+        throw new ValidationError(
+          `Attribute "${name}" is not allowed`
+        );
       }
 
       this.validateValue(attributes[name], definition);
@@ -28,7 +31,7 @@ export class ProductAttributeValidator {
         definition.required &&
         attributes[definition.name] === undefined
       ) {
-        throw new Error(
+        throw new ValidationError(
           `Attribute "${definition.name}" is required`
         );
       }
@@ -47,7 +50,7 @@ export class ProductAttributeValidator {
       definition.type !== "select" &&
       typeof value !== definition.type
     ) {
-      throw new Error(
+      throw new ValidationError(
         `Attribute "${definition.name}" must be of type ${definition.type}`
       );
     }
@@ -57,7 +60,7 @@ export class ProductAttributeValidator {
         typeof value !== "string" ||
         !definition.options?.includes(value)
       ) {
-        throw new Error(
+        throw new ValidationError(
           `Attribute "${definition.name}" has an invalid option`
         );
       }
