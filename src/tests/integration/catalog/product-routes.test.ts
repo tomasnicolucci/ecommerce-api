@@ -460,4 +460,58 @@ describe("Product routes", () => {
       currency: "USD"
     });
   });
+
+  it("should create a product variant", async () => {
+    const categoryResponse = await request(app)
+      .post("/categories")
+      .send({
+        name: "Smartphones",
+        slug: "smartphones",
+        parentId: null,
+        attributes: [
+          {
+            name: "color",
+            type: "string",
+            scope: "variant",
+            required: true
+          }
+        ]
+      });
+
+    const productResponse = await request(app)
+      .post("/products")
+      .send({
+        name: "Samsung Galaxy S25",
+        slug: "samsung-galaxy-s25",
+        description: "Samsung Galaxy S25 smartphone",
+        categoryId: categoryResponse.body.id,
+        attributes: {},
+        variants: []
+      });
+
+    const response = await request(app)
+      .post(`/products/${productResponse.body.id}/variants`)
+      .send({
+        sku: "S25-BLACK",
+        attributes: {
+          color: "black"
+        },
+        price: {
+          amount: 1200,
+          currency: "USD"
+        }
+      });
+
+    expect(response.status).toBe(201);
+    expect(response.body.id).toBeDefined();
+    expect(response.body.sku).toBe("S25-BLACK");
+    expect(response.body.attributes).toEqual({
+      color: "black"
+    });
+    expect(response.body.price).toEqual({
+      amount: 1200,
+      currency: "USD"
+    });
+    expect(response.body.active).toBe(true);
+  });
 });

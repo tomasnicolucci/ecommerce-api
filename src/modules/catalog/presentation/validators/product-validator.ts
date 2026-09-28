@@ -40,3 +40,14 @@ export const updateProductSchema = z.object({
     attributes: attributesSchema.optional()
   })
 });
+
+export const createProductVariantSchema = z.object({
+  body: z.object({
+    sku: z.string().trim().min(1),
+    attributes: attributesSchema,
+    price: z.object({
+      amount: z.number().nonnegative(),
+      currency: z.string().trim().min(1)
+    })
+  })
+});

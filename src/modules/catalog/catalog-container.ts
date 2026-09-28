@@ -28,6 +28,7 @@ import { MongoProductRepository } from "./infrastructure/persistence/mongoose/re
 import { ProductController } from "./presentation/controllers/product-controller.js";
 import { GetProductVariants } from "./application/use-cases/product/get-product-variants.js";
 import { GetProductVariantById } from "./application/use-cases/product/get-product-variant-by-id.js";
+import { CreateProductVariant } from "./application/use-cases/product/create-product-variant.js";
 
 const productRepository = new MongoProductRepository();
 const createProduct = new CreateProduct(productRepository, categoryRepository);
@@ -37,6 +38,7 @@ const updateProduct = new UpdateProduct(productRepository, categoryRepository);
 const deleteProduct = new DeleteProduct(productRepository);
 const getProductVariants = new GetProductVariants(productRepository);
 const getProductVariantById = new GetProductVariantById(productRepository);
+const createProductVariant = new CreateProductVariant(productRepository, categoryRepository);
 
 export const productController = new ProductController(createProduct, getProducts, getProductById, updateProduct, deleteProduct, getProductVariants,
-  getProductVariantById);
+  getProductVariantById, createProductVariant);
