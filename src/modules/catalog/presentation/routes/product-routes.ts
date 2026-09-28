@@ -42,3 +42,17 @@ productRouter.delete(
     productController.delete(req, res)
   )
 );
+
+productRouter.get(
+  "/:productId/variants",
+  asyncHandler((req, res) =>
+    productController.getVariants(req, res)
+  )
+);
+
+productRouter.get(
+  "/:productId/variants/:variantId",
+  asyncHandler((req, res) =>
+    productController.getVariantById(req, res)
+  )
+);
