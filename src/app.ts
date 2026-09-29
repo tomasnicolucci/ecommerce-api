@@ -4,6 +4,7 @@ import { checkPostgresConnection } from "./shared/infrastructure/database/postgr
 import { categoryRouter } from "./modules/catalog/presentation/routes/category-routes.js";
 import { errorHandler } from "./shared/presentation/middlewares/error-handler.js";
 import { productRouter } from "./modules/catalog/presentation/routes/product-routes.js";
+import { inventoryRouter } from "./modules/inventory/presentation/routes/inventory-routes.js";
 
 export const app = express();
 
@@ -32,5 +33,6 @@ app.get("/health", async (_req, res) => {
 
 app.use("/categories", categoryRouter);
 app.use("/products", productRouter);
+app.use("/inventory", inventoryRouter);
 
 app.use(errorHandler);
