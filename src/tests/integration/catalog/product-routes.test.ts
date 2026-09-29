@@ -656,6 +656,16 @@ describe("Product routes", () => {
               amount: 1200,
               currency: "USD"
             }
+          },
+          {
+            sku: "S25-WHITE",
+            attributes: {
+              color: "white"
+            },
+            price: {
+              amount: 1200,
+              currency: "USD"
+            }
           }
         ]
       });
@@ -677,6 +687,207 @@ describe("Product routes", () => {
       );
 
     expect(getResponse.status).toBe(404);
+
+    const variantsResponse = await request(app)
+      .get(`/products/${productResponse.body.id}/variants`);
+
+    expect(variantsResponse.status).toBe(200);
+    expect(variantsResponse.body).toHaveLength(1);
+    expect(variantsResponse.body[0].sku).toBe("S25-WHITE");
+  });
+
+  it("should not delete the last product variant", async () => {
+    const categoryResponse = await request(app)
+      .post("/categories")
+      .send({
+        name: "Smartphones",
+        slug: "smartphones",
+        parentId: null,
+        attributes: [
+          {
+            name: "color",
+            type: "string",
+            scope: "variant",
+            required: true
+          }
+        ]
+      });
+
+    const productResponse = await request(app)
+      .post("/products")
+      .send({
+        name: "Samsung Galaxy S25",
+        slug: "samsung-galaxy-s25",
+        description: "Samsung Galaxy S25 smartphone",
+        categoryId: categoryResponse.body.id,
+        attributes: {},
+        hasVariants: true,
+        variants: [
+          {
+            sku: "S25-BLACK",
+            attributes: {
+              color: "black"
+            },
+            price: {
+              amount: 1200,
+              currency: "USD"
+            }
+          }
+        ]
+      });
+
+    expect(productResponse.status).toBe(201);
+
+    const variantId = productResponse.body.variants[0].id;
+
+    const response = await request(app)
+      .delete(
+        `/products/${productResponse.body.id}/variants/${variantId}`
+      );
+
+    expect(response.status).toBe(400);
+    expect(response.body.message).toBe(
+      "Product must have at least one variant"
+    );
+  });
+
+  it("should not add variants to a product without visible variants", async () => {
+    const categoryResponse = await request(app)
+      .post("/categories")
+      .send({
+        name: "Accessories",
+        slug: "accessories",
+        parentId: null,
+        attributes: [
+          {
+            name: "brand",
+            type: "string",
+            scope: "product",
+            required: true
+          }
+        ]
+      });
+
+    const productResponse = await request(app)
+      .post("/products")
+      .send({
+        name: "Logitech MX Master 3S",
+        slug: "logitech-mx-master-3s",
+        description: "Wireless mouse",
+        categoryId: categoryResponse.body.id,
+        attributes: {
+          brand: "Logitech"
+        },
+        hasVariants: false,
+        sku: "LOG-MX3S",
+        price: {
+          amount: 120,
+          currency: "USD"
+        }
+      });
+
+    expect(productResponse.status).toBe(201);
+
+    const response = await request(app)
+      .post(`/products/${productResponse.body.id}/variants`)
+      .send({
+        sku: "LOG-MX3S-BLACK",
+        attributes: {},
+        price: {
+          amount: 130,
+          currency: "USD"
+        }
+      });
+
+    expect(response.status).toBe(400);
+    expect(response.body.message).toBe(
+      "Product does not support multiple variants"
+    );
+  });
+
+  it("should not change category when existing variants are incompatible", async () => {
+    const smartphonesCategoryResponse = await request(app)
+      .post("/categories")
+      .send({
+        name: "Smartphones",
+        slug: "smartphones",
+        parentId: null,
+        attributes: [
+          {
+            name: "brand",
+            type: "string",
+            scope: "product",
+            required: true
+          },
+          {
+            name: "color",
+            type: "string",
+            scope: "variant",
+            required: true
+          }
+        ]
+      });
+
+    const laptopsCategoryResponse = await request(app)
+      .post("/categories")
+      .send({
+        name: "Laptops",
+        slug: "laptops",
+        parentId: null,
+        attributes: [
+          {
+            name: "brand",
+            type: "string",
+            scope: "product",
+            required: true
+          },
+          {
+            name: "ram",
+            type: "select",
+            scope: "variant",
+            required: true,
+            options: ["8GB", "16GB", "32GB"]
+          }
+        ]
+      });
+
+    const productResponse = await request(app)
+      .post("/products")
+      .send({
+        name: "Samsung Galaxy S25",
+        slug: "samsung-galaxy-s25",
+        description: "Samsung Galaxy S25 smartphone",
+        categoryId: smartphonesCategoryResponse.body.id,
+        attributes: {
+          brand: "Samsung"
+        },
+        hasVariants: true,
+        variants: [
+          {
+            sku: "S25-BLACK",
+            attributes: {
+              color: "black"
+            },
+            price: {
+              amount: 1200,
+              currency: "USD"
+            }
+          }
+        ]
+      });
+
+    expect(productResponse.status).toBe(201);
+
+    const response = await request(app)
+      .patch(`/products/${productResponse.body.id}`)
+      .send({
+        categoryId: laptopsCategoryResponse.body.id
+      });
+
+    expect(response.status).toBe(400);
+    expect(response.body.message).toBe(
+      'Attribute "color" is not allowed'
+    );
   });
 
   it("should create a product without variants using a default variant", async () => {

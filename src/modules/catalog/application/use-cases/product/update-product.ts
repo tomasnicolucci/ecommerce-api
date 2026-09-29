@@ -62,6 +62,19 @@ export class UpdateProduct {
       productAttributeDefinitions
     );
 
+    const variantAttributeDefinitions = category.attributes.filter(
+      (definition) => definition.scope === "variant"
+    );
+
+    if (product.hasVariants) {
+      for (const variant of product.variants) {
+        ProductAttributeValidator.validate(
+          variant.attributes,
+          variantAttributeDefinitions
+        );
+      }
+    }
+
     if (input.name !== undefined) {
       product.rename(input.name);
     }

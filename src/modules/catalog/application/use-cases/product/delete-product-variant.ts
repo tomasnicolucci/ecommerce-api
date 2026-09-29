@@ -17,11 +17,25 @@ export class DeleteProductVariant {
     }
 
     const variant = product.variants.find(
-      (variant) => variant.id === variantId
+      (currentVariant) => currentVariant.id === variantId
     );
 
     if (!variant) {
       throw new AppError("Product variant not found", 404);
+    }
+
+    if (!product.hasVariants) {
+      throw new AppError(
+        "Default product variant cannot be deleted",
+        400
+      );
+    }
+
+    if (product.variants.length === 1) {
+      throw new AppError(
+        "Product must have at least one variant",
+        400
+      );
     }
 
     product.removeVariant(variantId);
