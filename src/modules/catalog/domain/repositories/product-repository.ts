@@ -4,6 +4,7 @@ export interface ProductRepository {
   findById(id: string): Promise<Product | null>;
   findBySlug(slug: string): Promise<Product | null>;
   findBySku(sku: string): Promise<Product | null>;
+  findByVariantId(variantId: string): Promise<Product | null>;
   findAll(): Promise<Product[]>;
   save(product: Product): Promise<Product>;
   update(product: Product): Promise<void>;

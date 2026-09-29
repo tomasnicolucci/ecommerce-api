@@ -20,6 +20,18 @@ export class InMemoryProductRepository implements ProductRepository {
     );
   }
 
+  async findByVariantId(
+    variantId: string
+  ): Promise<Product | null> {
+    return (
+      this.products.find((product) =>
+        product.variants.some(
+          (variant) => variant.id === variantId
+        )
+      ) ?? null
+    );
+  }
+
   async findAll(): Promise<Product[]> {
     return this.products;
   }

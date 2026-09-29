@@ -36,6 +36,18 @@ export class MongoProductRepository implements ProductRepository {
     return ProductMapper.toDomain(document);
   }
 
+  async findByVariantId(
+    variantId: string
+  ): Promise<Product | null> {
+    const document = await ProductModel.findOne({
+      "variants._id": variantId
+    });
+
+    return document
+      ? ProductMapper.toDomain(document)
+      : null;
+  }
+
   async findAll(): Promise<Product[]> {
     const documents = await ProductModel.find();
 
@@ -68,7 +80,7 @@ export class MongoProductRepository implements ProductRepository {
       persistenceData
     );
   }
-  
+
   async delete(id: string): Promise<void> {
     await ProductModel.findByIdAndDelete(id);
   }
