@@ -55,5 +55,8 @@ jobs:
       - name: Build
         run: npm run build
 
+      - name: Run database migrations
+        run: npm run migrate:up
+
       - name: Run tests
         run: npm test
