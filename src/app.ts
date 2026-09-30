@@ -6,6 +6,7 @@ import { errorHandler } from "./shared/presentation/middlewares/error-handler.js
 import { productRouter } from "./modules/catalog/presentation/routes/product-routes.js";
 import { inventoryRouter } from "./modules/inventory/presentation/routes/inventory-routes.js";
 import { cartRouter } from "./modules/cart/presentation/routes/cart-routes.js";
+import { customerRouter } from "./modules/customers/presentation/routes/customer-routes.js";
 
 export const app = express();
 
@@ -36,5 +37,6 @@ app.use("/categories", categoryRouter);
 app.use("/products", productRouter);
 app.use("/inventory", inventoryRouter);
 app.use("/carts", cartRouter);
+app.use("/customers", customerRouter);
 
 app.use(errorHandler);
