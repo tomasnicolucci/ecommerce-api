@@ -6,8 +6,11 @@ import {
   createCustomerSchema,
   updateCustomerSchema
 } from "../validators/customer-validator.js";
+import { authenticate } from "../../../auth/auth-container.js";
 
 export const customerRouter = Router();
+
+customerRouter.use(authenticate);
 
 customerRouter.post(
   "/",

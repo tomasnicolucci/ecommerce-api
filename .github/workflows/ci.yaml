@@ -38,7 +38,10 @@ jobs:
       DATABASE_URL: postgresql://ecommerce:ecommerce@localhost:5433/ecommerce
       MONGODB_URI: mongodb://localhost:27017/ecommerce
       MONGODB_TEST_URI: mongodb://localhost:27017/ecommerce_test
-
+      AUTH_JWKS_URL: http://localhost:3000/.well-known/jwks.json
+      AUTH_JWT_ISSUER: auth-service
+      AUTH_JWT_AUDIENCE: backend-services
+      
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4

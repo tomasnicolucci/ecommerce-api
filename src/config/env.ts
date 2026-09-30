@@ -13,7 +13,11 @@ const envSchema = z.object({
   DATABASE_URL: z.string(),
 
   MONGODB_URI: z.string(),
-  MONGODB_TEST_URI: z.string()
+  MONGODB_TEST_URI: z.string(),
+
+  AUTH_JWKS_URL: z.string().url(),
+  AUTH_JWT_ISSUER: z.string(),
+  AUTH_JWT_AUDIENCE: z.string()
 });
 
 export const env = envSchema.parse(process.env);
