@@ -13,11 +13,13 @@ export class UpdateCustomer {
   ) {}
 
   async execute(
-    id: string,
+    userId: string,
     input: UpdateCustomerInput
   ): Promise<Customer> {
     const customer =
-      await this.customerRepository.findById(id);
+      await this.customerRepository.findByUserId(
+        userId
+      );
 
     if (!customer) {
       throw new AppError("Customer not found", 404);

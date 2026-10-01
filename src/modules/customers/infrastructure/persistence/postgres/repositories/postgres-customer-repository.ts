@@ -54,20 +54,6 @@ export class PostgresCustomerRepository
     return CustomerMapper.toDomain(result.rows[0]);
   }
 
-  async userExists(userId: string): Promise<boolean> {
-    const result = await postgresPool.query(
-      `
-        SELECT 1
-        FROM users
-        WHERE id = $1
-        LIMIT 1
-      `,
-      [userId]
-    );
-
-    return result.rows.length > 0;
-  }
-
   async save(
     customer: Customer
   ): Promise<Customer> {

@@ -7,8 +7,6 @@ export interface CustomerRepository {
     userId: string
   ): Promise<Customer | null>;
 
-  userExists(userId: string): Promise<boolean>;
-
   save(customer: Customer): Promise<Customer>;
 
   update(customer: Customer): Promise<void>;

@@ -1,6 +1,6 @@
 import type { Request, Response } from "express";
+import { AppError } from "../../../../shared/domain/errors/app-error.js";
 import type { CreateCustomer } from "../../application/use-cases/customer/create-customer.js";
-import type { GetCustomerById } from "../../application/use-cases/customer/get-customer-by-id.js";
 import type { GetCustomerByUserId } from "../../application/use-cases/customer/get-customer-by-user-id.js";
 import type { UpdateCustomer } from "../../application/use-cases/customer/update-customer.js";
 import { CustomerResponseMapper } from "../mappers/customer-response-mapper.js";
@@ -8,7 +8,6 @@ import { CustomerResponseMapper } from "../mappers/customer-response-mapper.js";
 export class CustomerController {
   constructor(
     private readonly createCustomer: CreateCustomer,
-    private readonly getCustomerById: GetCustomerById,
     private readonly getCustomerByUserId: GetCustomerByUserId,
     private readonly updateCustomer: UpdateCustomer
   ) {}
@@ -17,63 +16,51 @@ export class CustomerController {
     req: Request,
     res: Response
   ): Promise<void> => {
+    if (!req.auth) {
+      throw new AppError("Unauthorized", 401);
+    }
+
     const customer =
-      await this.createCustomer.execute(req.body);
+      await this.createCustomer.execute({
+        userId: req.auth.userId,
+        firstName: req.body.firstName,
+        lastName: req.body.lastName
+      });
 
     res.status(201).json(
       CustomerResponseMapper.toResponse(customer)
     );
   };
 
-  getById = async (
+  getMe = async (
     req: Request,
     res: Response
   ): Promise<void> => {
-    const id = req.params.id;
-
-    if (typeof id !== "string") {
-      throw new Error("Invalid customer id");
+    if (!req.auth) {
+      throw new AppError("Unauthorized", 401);
     }
 
     const customer =
-      await this.getCustomerById.execute(id);
+      await this.getCustomerByUserId.execute(
+        req.auth.userId
+      );
 
     res.status(200).json(
       CustomerResponseMapper.toResponse(customer)
     );
   };
 
-  getByUserId = async (
+  updateMe = async (
     req: Request,
     res: Response
   ): Promise<void> => {
-    const userId = req.params.userId;
-
-    if (typeof userId !== "string") {
-      throw new Error("Invalid user id");
-    }
-
-    const customer =
-      await this.getCustomerByUserId.execute(userId);
-
-    res.status(200).json(
-      CustomerResponseMapper.toResponse(customer)
-    );
-  };
-
-  update = async (
-    req: Request,
-    res: Response
-  ): Promise<void> => {
-    const id = req.params.id;
-
-    if (typeof id !== "string") {
-      throw new Error("Invalid customer id");
+    if (!req.auth) {
+      throw new AppError("Unauthorized", 401);
     }
 
     const customer =
       await this.updateCustomer.execute(
-        id,
+        req.auth.userId,
         req.body
       );
 

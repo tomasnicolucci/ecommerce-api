@@ -2,9 +2,16 @@ import { z } from "zod";
 
 export const createCustomerSchema = z.object({
   body: z.object({
-    userId: z.string().uuid(),
-    firstName: z.string().trim().min(1).nullable(),
-    lastName: z.string().trim().min(1).nullable()
+    firstName: z
+      .string()
+      .trim()
+      .min(1)
+      .nullable(),
+    lastName: z
+      .string()
+      .trim()
+      .min(1)
+      .nullable()
   })
 });
 

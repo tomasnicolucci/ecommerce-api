@@ -16,15 +16,6 @@ export class CreateCustomer {
   async execute(
     input: CreateCustomerInput
   ): Promise<Customer> {
-    const userExists =
-      await this.customerRepository.userExists(
-        input.userId
-      );
-
-    if (!userExists) {
-      throw new AppError("User not found", 404);
-    }
-
     const existingCustomer =
       await this.customerRepository.findByUserId(
         input.userId

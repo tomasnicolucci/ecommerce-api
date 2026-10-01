@@ -1,9 +1,4 @@
-import {
-  beforeEach,
-  describe,
-  expect,
-  it
-} from "vitest";
+import { beforeEach, describe, expect, it } from "vitest";
 import { CreateCustomer } from "../../../modules/customers/application/use-cases/customer/create-customer.js";
 import { GetCustomerById } from "../../../modules/customers/application/use-cases/customer/get-customer-by-id.js";
 import { GetCustomerByUserId } from "../../../modules/customers/application/use-cases/customer/get-customer-by-user-id.js";
@@ -16,8 +11,6 @@ describe("Customer use cases", () => {
   beforeEach(() => {
     customerRepository =
       new InMemoryCustomerRepository();
-
-    customerRepository.userIds.push("user-1");
   });
 
   it("should create a customer", async () => {
@@ -34,19 +27,6 @@ describe("Customer use cases", () => {
     expect(customer.userId).toBe("user-1");
     expect(customer.firstName).toBe("John");
     expect(customer.lastName).toBe("Doe");
-  });
-
-  it("should not create a customer for a non-existing user", async () => {
-    const useCase =
-      new CreateCustomer(customerRepository);
-
-    await expect(
-      useCase.execute({
-        userId: "missing-user",
-        firstName: "John",
-        lastName: "Doe"
-      })
-    ).rejects.toThrow("User not found");
   });
 
   it("should not create more than one customer for the same user", async () => {
@@ -126,11 +106,11 @@ describe("Customer use cases", () => {
     ).rejects.toThrow("Customer not found");
   });
 
-  it("should update a customer", async () => {
+  it("should update a customer by user id", async () => {
     const createCustomer =
       new CreateCustomer(customerRepository);
 
-    const customer = await createCustomer.execute({
+    await createCustomer.execute({
       userId: "user-1",
       firstName: "John",
       lastName: "Doe"
@@ -139,13 +119,14 @@ describe("Customer use cases", () => {
     const updateCustomer =
       new UpdateCustomer(customerRepository);
 
-    const updated = await updateCustomer.execute(
-      customer.id!,
-      {
-        firstName: "Jane",
-        lastName: "Smith"
-      }
-    );
+    const updated =
+      await updateCustomer.execute(
+        "user-1",
+        {
+          firstName: "Jane",
+          lastName: "Smith"
+        }
+      );
 
     expect(updated.firstName).toBe("Jane");
     expect(updated.lastName).toBe("Smith");
@@ -155,7 +136,7 @@ describe("Customer use cases", () => {
     const createCustomer =
       new CreateCustomer(customerRepository);
 
-    const customer = await createCustomer.execute({
+    await createCustomer.execute({
       userId: "user-1",
       firstName: "John",
       lastName: "Doe"
@@ -164,12 +145,13 @@ describe("Customer use cases", () => {
     const updateCustomer =
       new UpdateCustomer(customerRepository);
 
-    const updated = await updateCustomer.execute(
-      customer.id!,
-      {
-        firstName: "Jane"
-      }
-    );
+    const updated =
+      await updateCustomer.execute(
+        "user-1",
+        {
+          firstName: "Jane"
+        }
+      );
 
     expect(updated.firstName).toBe("Jane");
     expect(updated.lastName).toBe("Doe");
@@ -180,9 +162,12 @@ describe("Customer use cases", () => {
       new UpdateCustomer(customerRepository);
 
     await expect(
-      useCase.execute("missing-customer", {
-        firstName: "Jane"
-      })
+      useCase.execute(
+        "missing-user",
+        {
+          firstName: "Jane"
+        }
+      )
     ).rejects.toThrow("Customer not found");
   });
 });

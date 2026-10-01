@@ -5,7 +5,6 @@ export class InMemoryCustomerRepository
   implements CustomerRepository
 {
   public customers: Customer[] = [];
-  public userIds: string[] = [];
 
   async findById(
     id: string
@@ -25,10 +24,6 @@ export class InMemoryCustomerRepository
         (customer) => customer.userId === userId
       ) ?? null
     );
-  }
-
-  async userExists(userId: string): Promise<boolean> {
-    return this.userIds.includes(userId);
   }
 
   async save(

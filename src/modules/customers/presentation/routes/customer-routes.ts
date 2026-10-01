@@ -1,43 +1,48 @@
-import { Router } from "express";
+import {
+  Router,
+  type RequestHandler
+} from "express";
 import { validate } from "../../../../shared/presentation/middlewares/validate.js";
 import { asyncHandler } from "../../../../shared/presentation/middlewares/async-handler.js";
+import { authenticate } from "../../../auth/auth-container.js";
 import { customerController } from "../../customers-container.js";
 import {
   createCustomerSchema,
   updateCustomerSchema
 } from "../validators/customer-validator.js";
-import { authenticate } from "../../../auth/auth-container.js";
 
-export const customerRouter = Router();
+export const createCustomerRouter = (
+  authenticationMiddleware: RequestHandler
+): Router => {
+  const router = Router();
 
-customerRouter.use(authenticate);
+  router.use(authenticationMiddleware);
 
-customerRouter.post(
-  "/",
-  validate(createCustomerSchema),
-  asyncHandler((req, res) =>
-    customerController.create(req, res)
-  )
-);
+  router.post(
+    "/me",
+    validate(createCustomerSchema),
+    asyncHandler((req, res) =>
+      customerController.create(req, res)
+    )
+  );
 
-customerRouter.get(
-  "/user/:userId",
-  asyncHandler((req, res) =>
-    customerController.getByUserId(req, res)
-  )
-);
+  router.get(
+    "/me",
+    asyncHandler((req, res) =>
+      customerController.getMe(req, res)
+    )
+  );
 
-customerRouter.get(
-  "/:id",
-  asyncHandler((req, res) =>
-    customerController.getById(req, res)
-  )
-);
+  router.patch(
+    "/me",
+    validate(updateCustomerSchema),
+    asyncHandler((req, res) =>
+      customerController.updateMe(req, res)
+    )
+  );
 
-customerRouter.patch(
-  "/:id",
-  validate(updateCustomerSchema),
-  asyncHandler((req, res) =>
-    customerController.update(req, res)
-  )
-);
+  return router;
+};
+
+export const customerRouter =
+  createCustomerRouter(authenticate);
