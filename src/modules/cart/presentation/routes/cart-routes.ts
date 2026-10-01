@@ -1,32 +1,49 @@
-import { Router } from "express";
+import {
+  Router,
+  type RequestHandler
+} from "express";
 import { asyncHandler } from "../../../../shared/presentation/middlewares/async-handler.js";
 import { validate } from "../../../../shared/presentation/middlewares/validate.js";
+import { authenticate } from "../../../auth/auth-container.js";
 import { cartController } from "../../cart-container.js";
 import {
   addCartItemSchema,
   updateCartItemQuantitySchema
 } from "../validators/cart-validator.js";
 
-export const cartRouter = Router();
+export const createCartRouter = (
+  authenticationMiddleware: RequestHandler
+): Router => {
+  const router = Router();
 
-cartRouter.get(
-  "/:customerId",
-  asyncHandler(cartController.getActive)
-);
+  router.use(authenticationMiddleware);
 
-cartRouter.post(
-  "/:customerId/items",
-  validate(addCartItemSchema),
-  asyncHandler(cartController.addItem)
-);
+  router.get(
+    "/me",
+    asyncHandler(cartController.getActive)
+  );
 
-cartRouter.patch(
-  "/:customerId/items/:variantId",
-  validate(updateCartItemQuantitySchema),
-  asyncHandler(cartController.updateItemQuantity)
-);
+  router.post(
+    "/me/items",
+    validate(addCartItemSchema),
+    asyncHandler(cartController.addItem)
+  );
 
-cartRouter.delete(
-  "/:customerId/items/:variantId",
-  asyncHandler(cartController.removeItem)
-);
+  router.patch(
+    "/me/items/:variantId",
+    validate(updateCartItemQuantitySchema),
+    asyncHandler(
+      cartController.updateItemQuantity
+    )
+  );
+
+  router.delete(
+    "/me/items/:variantId",
+    asyncHandler(cartController.removeItem)
+  );
+
+  return router;
+};
+
+export const cartRouter =
+  createCartRouter(authenticate);
