@@ -1,10 +1,21 @@
 import request from "supertest";
-import { describe, expect, it } from "vitest";
-import { app } from "../../../app.js";
+import { beforeEach, describe, expect, it } from "vitest";
+import {
+  createRbacTestApp,
+  createTestUser
+} from "../../helpers/rbac-test-app.js";
 
 describe("Product routes", () => {
+  const testContext = createRbacTestApp();
+
+  beforeEach(async () => {
+    const adminId = await createTestUser("admin");
+
+    testContext.authenticateAs(adminId);
+  });
+
   it("should create a product", async () => {
-    const categoryResponse = await request(app)
+    const categoryResponse = await request(testContext.app)
       .post("/categories")
       .send({
         name: "Smartphones",
@@ -42,7 +53,7 @@ describe("Product routes", () => {
 
     expect(categoryResponse.status).toBe(201);
 
-    const response = await request(app)
+    const response = await request(testContext.app)
       .post("/products")
       .send({
         name: "Samsung Galaxy S25",
@@ -104,7 +115,7 @@ describe("Product routes", () => {
   });
 
   it("should not create a product with invalid attributes", async () => {
-    const categoryResponse = await request(app)
+    const categoryResponse = await request(testContext.app)
       .post("/categories")
       .send({
         name: "Smartphones",
@@ -120,7 +131,7 @@ describe("Product routes", () => {
         ]
       });
 
-    const response = await request(app)
+    const response = await request(testContext.app)
       .post("/products")
       .send({
         name: "Samsung Galaxy S25",
@@ -140,7 +151,7 @@ describe("Product routes", () => {
   });
 
   it("should get all products", async () => {
-    const categoryResponse = await request(app)
+    const categoryResponse = await request(testContext.app)
       .post("/categories")
       .send({
         name: "Smartphones",
@@ -156,7 +167,7 @@ describe("Product routes", () => {
         ]
       });
 
-    const productResponse = await request(app)
+    const productResponse = await request(testContext.app)
       .post("/products")
       .send({
         name: "Samsung Galaxy S25",
@@ -176,7 +187,7 @@ describe("Product routes", () => {
 
     expect(productResponse.status).toBe(201);
 
-    const response = await request(app)
+    const response = await request(testContext.app)
       .get("/products");
 
     expect(response.status).toBe(200);
@@ -190,7 +201,7 @@ describe("Product routes", () => {
   });
 
   it("should get a product by id", async () => {
-    const categoryResponse = await request(app)
+    const categoryResponse = await request(testContext.app)
       .post("/categories")
       .send({
         name: "Smartphones",
@@ -206,7 +217,7 @@ describe("Product routes", () => {
         ]
       });
 
-    const productResponse = await request(app)
+    const productResponse = await request(testContext.app)
       .post("/products")
       .send({
         name: "Samsung Galaxy S25",
@@ -226,7 +237,7 @@ describe("Product routes", () => {
 
     expect(productResponse.status).toBe(201);
 
-    const response = await request(app)
+    const response = await request(testContext.app)
       .get(`/products/${productResponse.body.id}`);
 
     expect(response.status).toBe(200);
@@ -245,7 +256,7 @@ describe("Product routes", () => {
   });
 
   it("should update a product", async () => {
-    const categoryResponse = await request(app)
+    const categoryResponse = await request(testContext.app)
       .post("/categories")
       .send({
         name: "Smartphones",
@@ -261,7 +272,7 @@ describe("Product routes", () => {
         ]
       });
 
-    const productResponse = await request(app)
+    const productResponse = await request(testContext.app)
       .post("/products")
       .send({
         name: "Samsung Galaxy S25",
@@ -281,7 +292,7 @@ describe("Product routes", () => {
 
     expect(productResponse.status).toBe(201);
 
-    const response = await request(app)
+    const response = await request(testContext.app)
       .patch(`/products/${productResponse.body.id}`)
       .send({
         name: "Samsung Galaxy S25 Ultra",
@@ -305,7 +316,7 @@ describe("Product routes", () => {
   });
 
   it("should delete a product", async () => {
-    const categoryResponse = await request(app)
+    const categoryResponse = await request(testContext.app)
       .post("/categories")
       .send({
         name: "Smartphones",
@@ -321,7 +332,7 @@ describe("Product routes", () => {
         ]
       });
 
-    const productResponse = await request(app)
+    const productResponse = await request(testContext.app)
       .post("/products")
       .send({
         name: "Samsung Galaxy S25",
@@ -341,19 +352,19 @@ describe("Product routes", () => {
 
     expect(productResponse.status).toBe(201);
 
-    const deleteResponse = await request(app)
+    const deleteResponse = await request(testContext.app)
       .delete(`/products/${productResponse.body.id}`);
 
     expect(deleteResponse.status).toBe(204);
 
-    const getResponse = await request(app)
+    const getResponse = await request(testContext.app)
       .get(`/products/${productResponse.body.id}`);
 
     expect(getResponse.status).toBe(404);
   });
 
   it("should get product variants", async () => {
-    const categoryResponse = await request(app)
+    const categoryResponse = await request(testContext.app)
       .post("/categories")
       .send({
         name: "Smartphones",
@@ -369,7 +380,7 @@ describe("Product routes", () => {
         ]
       });
 
-    const productResponse = await request(app)
+    const productResponse = await request(testContext.app)
       .post("/products")
       .send({
         name: "Samsung Galaxy S25",
@@ -394,7 +405,7 @@ describe("Product routes", () => {
 
     expect(productResponse.status).toBe(201);
 
-    const response = await request(app)
+    const response = await request(testContext.app)
       .get(`/products/${productResponse.body.id}/variants`);
 
     expect(response.status).toBe(200);
@@ -412,7 +423,7 @@ describe("Product routes", () => {
   });
 
   it("should get a product variant by id", async () => {
-    const categoryResponse = await request(app)
+    const categoryResponse = await request(testContext.app)
       .post("/categories")
       .send({
         name: "Smartphones",
@@ -428,7 +439,7 @@ describe("Product routes", () => {
         ]
       });
 
-    const productResponse = await request(app)
+    const productResponse = await request(testContext.app)
       .post("/products")
       .send({
         name: "Samsung Galaxy S25",
@@ -455,7 +466,7 @@ describe("Product routes", () => {
 
     const variantId = productResponse.body.variants[0].id;
 
-    const response = await request(app)
+    const response = await request(testContext.app)
       .get(
         `/products/${productResponse.body.id}/variants/${variantId}`
       );
@@ -475,7 +486,7 @@ describe("Product routes", () => {
   });
 
   it("should create a product variant", async () => {
-    const categoryResponse = await request(app)
+    const categoryResponse = await request(testContext.app)
       .post("/categories")
       .send({
         name: "Smartphones",
@@ -491,7 +502,7 @@ describe("Product routes", () => {
         ]
       });
 
-    const productResponse = await request(app)
+    const productResponse = await request(testContext.app)
       .post("/products")
       .send({
         name: "Samsung Galaxy S25",
@@ -516,7 +527,7 @@ describe("Product routes", () => {
 
     expect(productResponse.status).toBe(201);
 
-    const response = await request(app)
+    const response = await request(testContext.app)
       .post(`/products/${productResponse.body.id}/variants`)
       .send({
         sku: "S25-BLACK",
@@ -546,7 +557,7 @@ describe("Product routes", () => {
   });
 
   it("should update a product variant", async () => {
-    const categoryResponse = await request(app)
+    const categoryResponse = await request(testContext.app)
       .post("/categories")
       .send({
         name: "Smartphones",
@@ -562,7 +573,7 @@ describe("Product routes", () => {
         ]
       });
 
-    const productResponse = await request(app)
+    const productResponse = await request(testContext.app)
       .post("/products")
       .send({
         name: "Samsung Galaxy S25",
@@ -589,7 +600,7 @@ describe("Product routes", () => {
 
     const variantId = productResponse.body.variants[0].id;
 
-    const response = await request(app)
+    const response = await request(testContext.app)
       .patch(
         `/products/${productResponse.body.id}/variants/${variantId}`
       )
@@ -621,7 +632,7 @@ describe("Product routes", () => {
   });
 
   it("should delete a product variant", async () => {
-    const categoryResponse = await request(app)
+    const categoryResponse = await request(testContext.app)
       .post("/categories")
       .send({
         name: "Smartphones",
@@ -637,7 +648,7 @@ describe("Product routes", () => {
         ]
       });
 
-    const productResponse = await request(app)
+    const productResponse = await request(testContext.app)
       .post("/products")
       .send({
         name: "Samsung Galaxy S25",
@@ -674,21 +685,21 @@ describe("Product routes", () => {
 
     const variantId = productResponse.body.variants[0].id;
 
-    const deleteResponse = await request(app)
+    const deleteResponse = await request(testContext.app)
       .delete(
         `/products/${productResponse.body.id}/variants/${variantId}`
       );
 
     expect(deleteResponse.status).toBe(204);
 
-    const getResponse = await request(app)
+    const getResponse = await request(testContext.app)
       .get(
         `/products/${productResponse.body.id}/variants/${variantId}`
       );
 
     expect(getResponse.status).toBe(404);
 
-    const variantsResponse = await request(app)
+    const variantsResponse = await request(testContext.app)
       .get(`/products/${productResponse.body.id}/variants`);
 
     expect(variantsResponse.status).toBe(200);
@@ -697,7 +708,7 @@ describe("Product routes", () => {
   });
 
   it("should not delete the last product variant", async () => {
-    const categoryResponse = await request(app)
+    const categoryResponse = await request(testContext.app)
       .post("/categories")
       .send({
         name: "Smartphones",
@@ -713,7 +724,7 @@ describe("Product routes", () => {
         ]
       });
 
-    const productResponse = await request(app)
+    const productResponse = await request(testContext.app)
       .post("/products")
       .send({
         name: "Samsung Galaxy S25",
@@ -740,7 +751,7 @@ describe("Product routes", () => {
 
     const variantId = productResponse.body.variants[0].id;
 
-    const response = await request(app)
+    const response = await request(testContext.app)
       .delete(
         `/products/${productResponse.body.id}/variants/${variantId}`
       );
@@ -752,7 +763,7 @@ describe("Product routes", () => {
   });
 
   it("should not add variants to a product without visible variants", async () => {
-    const categoryResponse = await request(app)
+    const categoryResponse = await request(testContext.app)
       .post("/categories")
       .send({
         name: "Accessories",
@@ -768,7 +779,7 @@ describe("Product routes", () => {
         ]
       });
 
-    const productResponse = await request(app)
+    const productResponse = await request(testContext.app)
       .post("/products")
       .send({
         name: "Logitech MX Master 3S",
@@ -788,7 +799,7 @@ describe("Product routes", () => {
 
     expect(productResponse.status).toBe(201);
 
-    const response = await request(app)
+    const response = await request(testContext.app)
       .post(`/products/${productResponse.body.id}/variants`)
       .send({
         sku: "LOG-MX3S-BLACK",
@@ -806,7 +817,7 @@ describe("Product routes", () => {
   });
 
   it("should not change category when existing variants are incompatible", async () => {
-    const smartphonesCategoryResponse = await request(app)
+    const smartphonesCategoryResponse = await request(testContext.app)
       .post("/categories")
       .send({
         name: "Smartphones",
@@ -828,7 +839,7 @@ describe("Product routes", () => {
         ]
       });
 
-    const laptopsCategoryResponse = await request(app)
+    const laptopsCategoryResponse = await request(testContext.app)
       .post("/categories")
       .send({
         name: "Laptops",
@@ -851,7 +862,7 @@ describe("Product routes", () => {
         ]
       });
 
-    const productResponse = await request(app)
+    const productResponse = await request(testContext.app)
       .post("/products")
       .send({
         name: "Samsung Galaxy S25",
@@ -878,7 +889,7 @@ describe("Product routes", () => {
 
     expect(productResponse.status).toBe(201);
 
-    const response = await request(app)
+    const response = await request(testContext.app)
       .patch(`/products/${productResponse.body.id}`)
       .send({
         categoryId: laptopsCategoryResponse.body.id
@@ -891,7 +902,7 @@ describe("Product routes", () => {
   });
 
   it("should create a product without variants using a default variant", async () => {
-    const categoryResponse = await request(app)
+    const categoryResponse = await request(testContext.app)
       .post("/categories")
       .send({
         name: "Accessories",
@@ -907,7 +918,7 @@ describe("Product routes", () => {
         ]
       });
 
-    const response = await request(app)
+    const response = await request(testContext.app)
       .post("/products")
       .send({
         name: "Logitech MX Master 3S",
@@ -937,4 +948,38 @@ describe("Product routes", () => {
       currency: "USD"
     });
   });
+
+  it("should reject product creation without authentication", async () => {
+    testContext.clearAuthentication();
+
+    const response = await request(testContext.app)
+      .post("/products")
+      .send({});
+
+    expect(response.status).toBe(401);
+    expect(response.body.message).toBe("Unauthorized");
+  });
+
+  it("should reject product creation without catalog permission", async () => {
+    const customerId = await createTestUser("customer");
+
+    testContext.authenticateAs(customerId);
+
+    const response = await request(testContext.app)
+      .post("/products")
+      .send({});
+
+    expect(response.status).toBe(403);
+    expect(response.body.message).toBe("Forbidden");
+  });
+
+  it("should allow public product reads without authentication", async () => {
+    testContext.clearAuthentication();
+
+    const response = await request(testContext.app)
+      .get("/products");
+
+    expect(response.status).toBe(200);
+  });
+
 });

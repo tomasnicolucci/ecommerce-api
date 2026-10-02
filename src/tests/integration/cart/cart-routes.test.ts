@@ -8,15 +8,20 @@ import {
   expect,
   it
 } from "vitest";
-import { app } from "../../../app.js";
 import { createCartRouter } from "../../../modules/cart/presentation/routes/cart-routes.js";
 import { postgresPool } from "../../../shared/infrastructure/database/postgres.js";
 import { errorHandler } from "../../../shared/presentation/middlewares/error-handler.js";
+import {
+  createRbacTestApp,
+  createTestUser
+} from "../../helpers/rbac-test-app.js";
 
 describe("Cart routes", () => {
   let userId: string;
   let customerId: string;
   let variantId: string;
+
+  const adminContext = createRbacTestApp();
 
   const fakeAuthenticate: RequestHandler = (
     req,
@@ -46,33 +51,50 @@ describe("Cart routes", () => {
     await postgresPool.query(
       "DELETE FROM cart_items"
     );
+
     await postgresPool.query(
       "DELETE FROM carts"
     );
+
     await postgresPool.query(
       "DELETE FROM customers"
     );
-    await postgresPool.query(
-      "DELETE FROM users"
-    );
+
     await postgresPool.query(
       "DELETE FROM inventory_items"
     );
 
+    await postgresPool.query(
+      "DELETE FROM user_roles"
+    );
+
+    await postgresPool.query(
+      "DELETE FROM users"
+    );
+
+    const adminId =
+      await createTestUser("admin");
+
+    adminContext.authenticateAs(adminId);
+
     const userResult =
-      await postgresPool.query(
+      await postgresPool.query<{ id: string }>(
         `
-          INSERT INTO users (auth_user_id)
+          INSERT INTO users (
+            auth_user_id
+          )
           VALUES ($1)
           RETURNING id
         `,
-        [`auth-cart-test-${Date.now()}`]
+        [
+          `auth-cart-test-${Date.now()}-${Math.random()}`
+        ]
       );
 
     userId = userResult.rows[0].id;
 
     const customerResult =
-      await postgresPool.query(
+      await postgresPool.query<{ id: string }>(
         `
           INSERT INTO customers (
             user_id,
@@ -93,11 +115,11 @@ describe("Cart routes", () => {
       customerResult.rows[0].id;
 
     const categoryResponse =
-      await request(app)
+      await request(adminContext.app)
         .post("/categories")
         .send({
           name: "Cart Test Category",
-          slug: `cart-test-${Date.now()}`,
+          slug: `cart-test-${Date.now()}-${Math.random()}`,
           parentId: null,
           attributes: [
             {
@@ -112,18 +134,18 @@ describe("Cart routes", () => {
     expect(categoryResponse.status).toBe(201);
 
     const productResponse =
-      await request(app)
+      await request(adminContext.app)
         .post("/products")
         .send({
           name: "Cart Test Product",
-          slug: `cart-product-${Date.now()}`,
+          slug: `cart-product-${Date.now()}-${Math.random()}`,
           description: "Product for cart tests",
           categoryId: categoryResponse.body.id,
           attributes: {
             brand: "Test"
           },
           hasVariants: false,
-          sku: `CART-SKU-${Date.now()}`,
+          sku: `CART-SKU-${Date.now()}-${Math.random()}`,
           price: {
             amount: 100,
             currency: "USD"
@@ -136,7 +158,7 @@ describe("Cart routes", () => {
       productResponse.body.variants[0].id;
 
     const inventoryResponse =
-      await request(app)
+      await request(adminContext.app)
         .post("/inventory")
         .send({
           variantId,
@@ -152,11 +174,16 @@ describe("Cart routes", () => {
         .get("/carts/me");
 
     expect(response.status).toBe(200);
-    expect(response.body.id).toBeDefined();
+
+    expect(response.body.id)
+      .toBeDefined();
+
     expect(response.body.customerId)
       .toBe(customerId);
+
     expect(response.body.status)
       .toBe("ACTIVE");
+
     expect(response.body.items)
       .toEqual([]);
   });
@@ -171,13 +198,17 @@ describe("Cart routes", () => {
         });
 
     expect(response.status).toBe(200);
+
     expect(response.body.customerId)
       .toBe(customerId);
+
     expect(response.body.items)
       .toHaveLength(1);
+
     expect(
       response.body.items[0].variantId
     ).toBe(variantId);
+
     expect(
       response.body.items[0].quantity
     ).toBe(2);
@@ -200,8 +231,10 @@ describe("Cart routes", () => {
         });
 
     expect(response.status).toBe(200);
+
     expect(response.body.items)
       .toHaveLength(1);
+
     expect(
       response.body.items[0].quantity
     ).toBe(5);
@@ -225,6 +258,7 @@ describe("Cart routes", () => {
         });
 
     expect(response.status).toBe(200);
+
     expect(
       response.body.items[0].quantity
     ).toBe(6);
@@ -245,6 +279,7 @@ describe("Cart routes", () => {
         );
 
     expect(response.status).toBe(200);
+
     expect(response.body.items)
       .toEqual([]);
   });
@@ -259,6 +294,7 @@ describe("Cart routes", () => {
         });
 
     expect(response.status).toBe(400);
+
     expect(response.body.message)
       .toBe("Insufficient stock");
   });
@@ -285,6 +321,7 @@ describe("Cart routes", () => {
         .get("/carts/me");
 
     expect(response.status).toBe(404);
+
     expect(response.body.message)
       .toBe("Customer not found");
   });
