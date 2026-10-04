@@ -49,6 +49,14 @@ describe("Cart routes", () => {
 
   beforeEach(async () => {
     await postgresPool.query(
+      "DELETE FROM order_items"
+    );
+
+    await postgresPool.query(
+      "DELETE FROM orders"
+    );
+
+    await postgresPool.query(
       "DELETE FROM cart_items"
     );
 

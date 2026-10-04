@@ -34,14 +34,25 @@ describe("Customer routes", () => {
 
   beforeEach(async () => {
     await postgresPool.query(
+      "DELETE FROM order_items"
+    );
+
+    await postgresPool.query(
+      "DELETE FROM orders"
+    );
+
+    await postgresPool.query(
       "DELETE FROM cart_items"
     );
+
     await postgresPool.query(
       "DELETE FROM carts"
     );
+
     await postgresPool.query(
       "DELETE FROM customers"
     );
+
     await postgresPool.query(
       "DELETE FROM users"
     );
