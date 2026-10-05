@@ -13,7 +13,7 @@ export class UpdateCartItemQuantity {
   constructor(
     private readonly cartRepository: CartRepository,
     private readonly inventoryRepository: InventoryRepository
-  ) {}
+  ) { }
 
   async execute(
     input: UpdateCartItemQuantityInput
@@ -46,7 +46,7 @@ export class UpdateCartItemQuantity {
       throw new AppError("Inventory not found", 404);
     }
 
-    if (input.quantity > inventory.quantity) {
+    if (input.quantity > inventory.availableQuantity) {
       throw new AppError("Insufficient stock", 400);
     }
 

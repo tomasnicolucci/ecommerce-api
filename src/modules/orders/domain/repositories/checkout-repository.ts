@@ -10,10 +10,15 @@ export interface CheckoutItemSnapshot {
   quantity: number;
 }
 
+export interface CheckoutResult {
+  order: Order;
+  paymentId: string;
+}
+
 export interface CheckoutRepository {
   checkout(
     customerId: string,
     cartId: string,
     items: CheckoutItemSnapshot[]
-  ): Promise<Order>;
+  ): Promise<CheckoutResult>;
 }

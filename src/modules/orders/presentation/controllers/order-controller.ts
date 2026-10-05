@@ -4,18 +4,15 @@ import type {
 } from "express";
 import { AppError } from "../../../../shared/domain/errors/app-error.js";
 import type { Checkout } from "../../application/use-cases/checkout.js";
-import type { GetMyOrders } from "../../application/use-cases/get-my-orders.js";
 import type { GetMyOrderById } from "../../application/use-cases/get-my-order-by-id.js";
+import type { GetMyOrders } from "../../application/use-cases/get-my-orders.js";
 import { OrderResponseMapper } from "../mappers/order-response-mapper.js";
 
 export class OrderController {
     constructor(
-        private readonly checkoutUseCase:
-            Checkout,
-        private readonly getMyOrders:
-            GetMyOrders,
-        private readonly getMyOrderById:
-            GetMyOrderById
+        private readonly checkoutUseCase: Checkout,
+        private readonly getMyOrdersUseCase: GetMyOrders,
+        private readonly getMyOrderByIdUseCase: GetMyOrderById
     ) { }
 
     checkout = async (
@@ -25,16 +22,18 @@ export class OrderController {
         const userId =
             this.getAuthenticatedUserId(req);
 
-        const order =
+        const result =
             await this.checkoutUseCase.execute(
                 userId
             );
 
-        res.status(201).json(
-            OrderResponseMapper.toResponse(
-                order
-            )
-        );
+        res.status(201).json({
+            order:
+                OrderResponseMapper.toResponse(
+                    result.order
+                ),
+            paymentId: result.paymentId
+        });
     };
 
     getMine = async (
@@ -45,7 +44,7 @@ export class OrderController {
             this.getAuthenticatedUserId(req);
 
         const orders =
-            await this.getMyOrders.execute(
+            await this.getMyOrdersUseCase.execute(
                 userId
             );
 
@@ -65,8 +64,7 @@ export class OrderController {
         const userId =
             this.getAuthenticatedUserId(req);
 
-        const orderId =
-            req.params.id;
+        const orderId = req.params.id;
 
         if (typeof orderId !== "string") {
             throw new AppError(
@@ -76,9 +74,9 @@ export class OrderController {
         }
 
         const order =
-            await this.getMyOrderById.execute(
-                userId,
-                orderId
+            await this.getMyOrderByIdUseCase.execute(
+                orderId,
+                userId
             );
 
         res.status(200).json(

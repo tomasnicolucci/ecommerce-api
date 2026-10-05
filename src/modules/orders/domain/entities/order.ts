@@ -53,7 +53,7 @@ export class Order {
         return new Order(null, {
             customerId,
             cartId,
-            status: "CONFIRMED",
+            status: "PENDING",
             totalAmount,
             currency: items[0].currency,
             items,

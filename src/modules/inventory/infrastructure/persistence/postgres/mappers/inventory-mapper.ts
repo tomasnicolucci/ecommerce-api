@@ -4,20 +4,34 @@ interface InventoryRow {
   id: string;
   variant_id: string;
   quantity: number;
+  reserved_quantity: number;
 }
 
 export class InventoryMapper {
-  static toDomain(row: InventoryRow): InventoryItem {
-    return InventoryItem.restore(row.id, {
-      variantId: row.variant_id,
-      quantity: row.quantity
-    });
+  static toDomain(
+    row: InventoryRow
+  ): InventoryItem {
+    return InventoryItem.restore(
+      row.id,
+      {
+        variantId: row.variant_id,
+        quantity: row.quantity,
+        reservedQuantity:
+          row.reserved_quantity
+      }
+    );
   }
 
-  static toPersistence(inventoryItem: InventoryItem) {
+  static toPersistence(
+    inventoryItem: InventoryItem
+  ) {
     return {
-      variantId: inventoryItem.variantId,
-      quantity: inventoryItem.quantity
+      variantId:
+        inventoryItem.variantId,
+      quantity:
+        inventoryItem.quantity,
+      reservedQuantity:
+        inventoryItem.reservedQuantity
     };
   }
 }

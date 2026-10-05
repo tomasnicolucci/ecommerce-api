@@ -16,7 +16,7 @@ export class AddCartItem {
     private readonly cartRepository: CartRepository,
     private readonly productRepository: ProductRepository,
     private readonly inventoryRepository: InventoryRepository
-  ) {}
+  ) { }
 
   async execute(input: AddCartItemInput): Promise<Cart> {
     const product =
@@ -72,7 +72,7 @@ export class AddCartItem {
     const finalQuantity =
       (existingItem?.quantity ?? 0) + input.quantity;
 
-    if (finalQuantity > inventory.quantity) {
+    if (finalQuantity > inventory.availableQuantity) {
       throw new AppError("Insufficient stock", 400);
     }
 

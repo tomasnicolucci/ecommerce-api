@@ -1,37 +1,40 @@
 import { AppError } from "../../../../shared/domain/errors/app-error.js";
-import type { CartRepository } from "../../../cart/domain/repositories/cart-repository.js";
 import type { ProductRepository } from "../../../catalog/domain/repositories/product-repository.js";
+import type { CartRepository } from "../../../cart/domain/repositories/cart-repository.js";
 import type { CustomerRepository } from "../../../customers/domain/repositories/customer-repository.js";
-import type { Order } from "../../domain/entities/order.js";
 import type {
   CheckoutItemSnapshot,
-  CheckoutRepository
+  CheckoutRepository,
+  CheckoutResult
 } from "../../domain/repositories/checkout-repository.js";
 
 export class Checkout {
   constructor(
-    private readonly customerRepository:
-      CustomerRepository,
-    private readonly cartRepository:
-      CartRepository,
-    private readonly productRepository:
-      ProductRepository,
-    private readonly checkoutRepository:
-      CheckoutRepository
-  ) {}
+    private readonly customerRepository: CustomerRepository,
+    private readonly cartRepository: CartRepository,
+    private readonly productRepository: ProductRepository,
+    private readonly checkoutRepository: CheckoutRepository
+  ) { }
 
   async execute(
     userId: string
-  ): Promise<Order> {
+  ): Promise<CheckoutResult> {
     const customer =
       await this.customerRepository.findByUserId(
         userId
       );
 
-    if (!customer || !customer.id) {
+    if (!customer) {
       throw new AppError(
         "Customer not found",
         404
+      );
+    }
+
+    if (!customer.id) {
+      throw new AppError(
+        "Customer id is required",
+        500
       );
     }
 
@@ -40,10 +43,17 @@ export class Checkout {
         customer.id
       );
 
-    if (!cart || !cart.id) {
+    if (!cart) {
       throw new AppError(
         "Active cart not found",
         404
+      );
+    }
+
+    if (!cart.id) {
+      throw new AppError(
+        "Cart id is required",
+        500
       );
     }
 
@@ -54,8 +64,8 @@ export class Checkout {
       );
     }
 
-    const snapshots:
-      CheckoutItemSnapshot[] = [];
+    const snapshots: CheckoutItemSnapshot[] =
+      [];
 
     for (const cartItem of cart.items) {
       const product =
@@ -63,9 +73,9 @@ export class Checkout {
           cartItem.variantId
         );
 
-      if (!product || !product.id) {
+      if (!product) {
         throw new AppError(
-          "Product not found for cart item",
+          "Product not found",
           404
         );
       }
@@ -79,12 +89,12 @@ export class Checkout {
 
       const variant =
         product.variants.find(
-          (currentVariant) =>
-            currentVariant.id ===
+          (candidate) =>
+            candidate.id ===
             cartItem.variantId
         );
 
-      if (!variant || !variant.id) {
+      if (!variant) {
         throw new AppError(
           "Product variant not found",
           404
@@ -99,31 +109,26 @@ export class Checkout {
       }
 
       snapshots.push({
-        variantId:
-          variant.id,
-        productId:
-          product.id,
-        productName:
-          product.name,
-        sku:
-          variant.sku,
-        unitPrice:
-          variant.price.amount,
-        currency:
-          variant.price.currency,
-        quantity:
-          cartItem.quantity
+        variantId: cartItem.variantId,
+        productId: product.id!,
+        productName: product.name,
+        sku: variant.sku,
+        unitPrice: variant.price.amount,
+        currency: variant.price.currency,
+        quantity: cartItem.quantity
       });
     }
 
-    const currencies =
-      new Set(
-        snapshots.map(
-          (item) => item.currency
-        )
+    const currency =
+      snapshots[0].currency;
+
+    const hasDifferentCurrency =
+      snapshots.some(
+        (item) =>
+          item.currency !== currency
       );
 
-    if (currencies.size !== 1) {
+    if (hasDifferentCurrency) {
       throw new AppError(
         "Cart items must use the same currency",
         400
