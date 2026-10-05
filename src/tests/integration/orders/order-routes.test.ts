@@ -55,6 +55,10 @@ describe("Order routes", () => {
 
   beforeEach(async () => {
     await postgresPool.query(
+      "DELETE FROM payments"
+    );
+
+    await postgresPool.query(
       "DELETE FROM order_items"
     );
 
@@ -92,7 +96,9 @@ describe("Order routes", () => {
     adminContext.authenticateAs(adminId);
 
     const userResult =
-      await postgresPool.query<{ id: string }>(
+      await postgresPool.query<{
+        id: string;
+      }>(
         `
           INSERT INTO users (
             auth_user_id
@@ -108,7 +114,9 @@ describe("Order routes", () => {
     userId = userResult.rows[0].id;
 
     const customerResult =
-      await postgresPool.query<{ id: string }>(
+      await postgresPool.query<{
+        id: string;
+      }>(
         `
           INSERT INTO customers (
             user_id,
@@ -213,53 +221,112 @@ describe("Order routes", () => {
     expect(response.status)
       .toBe(201);
 
-    expect(response.body.id)
+    expect(response.body.order.id)
       .toBeDefined();
 
-    expect(response.body.customerId)
-      .toBe(customerId);
-
-    expect(response.body.cartId)
-      .toBe(oldCartId);
-
-    expect(response.body.status)
-      .toBe("CONFIRMED");
-
-    expect(response.body.totalAmount)
-      .toBe(200);
-
-    expect(response.body.currency)
-      .toBe("USD");
-
-    expect(response.body.items)
-      .toHaveLength(1);
+    expect(
+      response.body.order.customerId
+    ).toBe(customerId);
 
     expect(
-      response.body.items[0].variantId
+      response.body.order.cartId
+    ).toBe(oldCartId);
+
+    expect(
+      response.body.order.status
+    ).toBe("PENDING");
+
+    expect(
+      response.body.order.totalAmount
+    ).toBe(200);
+
+    expect(
+      response.body.order.currency
+    ).toBe("USD");
+
+    expect(
+      response.body.order.items
+    ).toHaveLength(1);
+
+    expect(
+      response.body.order.items[0]
+        .variantId
     ).toBe(variantId);
 
     expect(
-      response.body.items[0].productName
+      response.body.order.items[0]
+        .productName
     ).toBe("Order Test Product");
 
     expect(
-      response.body.items[0].unitPrice
+      response.body.order.items[0]
+        .unitPrice
     ).toBe(100);
 
     expect(
-      response.body.items[0].quantity
+      response.body.order.items[0]
+        .quantity
     ).toBe(2);
 
     expect(
-      response.body.items[0].subtotal
+      response.body.order.items[0]
+        .subtotal
     ).toBe(200);
+
+    expect(response.body.paymentId)
+      .toBeDefined();
+
+    const paymentResult =
+      await postgresPool.query<{
+        id: string;
+        order_id: string;
+        status: string;
+        amount: string;
+        currency: string;
+      }>(
+        `
+          SELECT
+            id,
+            order_id,
+            status,
+            amount,
+            currency
+          FROM payments
+          WHERE id = $1
+        `,
+        [response.body.paymentId]
+      );
+
+    expect(paymentResult.rows)
+      .toHaveLength(1);
+
+    expect(
+      paymentResult.rows[0].order_id
+    ).toBe(response.body.order.id);
+
+    expect(
+      paymentResult.rows[0].status
+    ).toBe("PENDING");
+
+    expect(
+      Number(
+        paymentResult.rows[0].amount
+      )
+    ).toBe(200);
+
+    expect(
+      paymentResult.rows[0].currency
+    ).toBe("USD");
 
     const inventoryResult =
       await postgresPool.query<{
         quantity: number;
+        reserved_quantity: number;
       }>(
         `
-          SELECT quantity
+          SELECT
+            quantity,
+            reserved_quantity
           FROM inventory_items
           WHERE variant_id = $1
         `,
@@ -268,7 +335,12 @@ describe("Order routes", () => {
 
     expect(
       inventoryResult.rows[0].quantity
-    ).toBe(8);
+    ).toBe(10);
+
+    expect(
+      inventoryResult.rows[0]
+        .reserved_quantity
+    ).toBe(2);
 
     const completedCartResult =
       await postgresPool.query<{
@@ -333,16 +405,22 @@ describe("Order routes", () => {
       .toHaveLength(1);
 
     expect(response.body[0].id)
-      .toBe(checkoutResponse.body.id);
+      .toBe(
+        checkoutResponse.body.order.id
+      );
 
     expect(response.body[0].customerId)
       .toBe(customerId);
+
+    expect(response.body[0].status)
+      .toBe("PENDING");
 
     expect(response.body[0].items)
       .toHaveLength(1);
 
     expect(
-      response.body[0].items[0].productName
+      response.body[0].items[0]
+        .productName
     ).toBe("Order Test Product");
   });
 
@@ -362,11 +440,13 @@ describe("Order routes", () => {
       .toBe(201);
 
     const orderId =
-      checkoutResponse.body.id;
+      checkoutResponse.body.order.id;
 
     const response =
       await request(testApp)
-        .get(`/orders/me/${orderId}`);
+        .get(
+          `/orders/me/${orderId}`
+        );
 
     expect(response.status)
       .toBe(200);
@@ -376,6 +456,9 @@ describe("Order routes", () => {
 
     expect(response.body.customerId)
       .toBe(customerId);
+
+    expect(response.body.status)
+      .toBe("PENDING");
 
     expect(response.body.totalAmount)
       .toBe(100);
@@ -439,7 +522,7 @@ describe("Order routes", () => {
     const response =
       await request(testApp)
         .get(
-          `/orders/me/${checkoutResponse.body.id}`
+          `/orders/me/${checkoutResponse.body.order.id}`
         );
 
     expect(response.status)
@@ -478,11 +561,22 @@ describe("Order routes", () => {
         `
       );
 
+    const paymentsResult =
+      await postgresPool.query(
+        `
+          SELECT id
+          FROM payments
+        `
+      );
+
     expect(ordersResult.rows)
+      .toHaveLength(0);
+
+    expect(paymentsResult.rows)
       .toHaveLength(0);
   });
 
-  it("should reject checkout when stock became insufficient after adding the item", async () => {
+  it("should reject checkout when available stock became insufficient after adding the item", async () => {
     const addItemResponse =
       await request(testApp)
         .post("/carts/me/items")
@@ -497,7 +591,7 @@ describe("Order routes", () => {
     await postgresPool.query(
       `
         UPDATE inventory_items
-        SET quantity = 1
+        SET reserved_quantity = 9
         WHERE variant_id = $1
       `,
       [variantId]
@@ -521,15 +615,29 @@ describe("Order routes", () => {
         `
       );
 
+    const paymentsResult =
+      await postgresPool.query(
+        `
+          SELECT id
+          FROM payments
+        `
+      );
+
     expect(ordersResult.rows)
+      .toHaveLength(0);
+
+    expect(paymentsResult.rows)
       .toHaveLength(0);
 
     const inventoryResult =
       await postgresPool.query<{
         quantity: number;
+        reserved_quantity: number;
       }>(
         `
-          SELECT quantity
+          SELECT
+            quantity,
+            reserved_quantity
           FROM inventory_items
           WHERE variant_id = $1
         `,
@@ -538,7 +646,12 @@ describe("Order routes", () => {
 
     expect(
       inventoryResult.rows[0].quantity
-    ).toBe(1);
+    ).toBe(10);
+
+    expect(
+      inventoryResult.rows[0]
+        .reserved_quantity
+    ).toBe(9);
 
     const cartResult =
       await postgresPool.query<{

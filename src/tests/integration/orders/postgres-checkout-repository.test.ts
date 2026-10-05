@@ -4,604 +4,607 @@ import {
   expect,
   it
 } from "vitest";
-import { postgresPool } from "../../../shared/infrastructure/database/postgres.js";
 import { PostgresCheckoutRepository } from "../../../modules/orders/infrastructure/persistence/postgres/repositories/postgres-checkout-repository.js";
 import type { CheckoutItemSnapshot } from "../../../modules/orders/domain/repositories/checkout-repository.js";
+import { postgresPool } from "../../../shared/infrastructure/database/postgres.js";
 
-describe("PostgresCheckoutRepository", () => {
-  const repository =
-    new PostgresCheckoutRepository();
+describe(
+  "PostgresCheckoutRepository",
+  () => {
+    let repository:
+      PostgresCheckoutRepository;
 
-  let customerId: string;
-  let cartId: string;
+    let userId: string;
+    let customerId: string;
+    let cartId: string;
 
-  const variantId = "checkout-variant-1";
+    const variantId =
+      "507f1f77bcf86cd799439011";
 
-  const createSnapshot = (
-    quantity: number
-  ): CheckoutItemSnapshot => ({
-    variantId,
-    productId: "checkout-product-1",
-    productName: "Checkout Product",
-    sku: "CHECKOUT-SKU-001",
-    unitPrice: 100,
-    currency: "USD",
-    quantity
-  });
+    const items:
+      CheckoutItemSnapshot[] = [
+        {
+          variantId,
+          productId:
+            "507f1f77bcf86cd799439012",
+          productName:
+            "Test Product",
+          sku: "TEST-SKU",
+          unitPrice: 100,
+          currency: "USD",
+          quantity: 2
+        }
+      ];
 
-  beforeEach(async () => {
-    await postgresPool.query(
-      "DELETE FROM order_items"
-    );
+    beforeEach(async () => {
+      repository =
+        new PostgresCheckoutRepository();
 
-    await postgresPool.query(
-      "DELETE FROM orders"
-    );
-
-    await postgresPool.query(
-      "DELETE FROM cart_items"
-    );
-
-    await postgresPool.query(
-      "DELETE FROM carts"
-    );
-
-    await postgresPool.query(
-      "DELETE FROM customers"
-    );
-
-    await postgresPool.query(
-      "DELETE FROM inventory_items"
-    );
-
-    await postgresPool.query(
-      "DELETE FROM user_roles"
-    );
-
-    await postgresPool.query(
-      "DELETE FROM users"
-    );
-
-    const userResult =
-      await postgresPool.query<{ id: string }>(
-        `
-          INSERT INTO users (
-            auth_user_id
-          )
-          VALUES ($1)
-          RETURNING id
-        `,
-        [
-          `checkout-auth-${Date.now()}-${Math.random()}`
-        ]
+      await postgresPool.query(
+        "DELETE FROM payments"
       );
 
-    const customerResult =
-      await postgresPool.query<{ id: string }>(
+      await postgresPool.query(
+        "DELETE FROM order_items"
+      );
+
+      await postgresPool.query(
+        "DELETE FROM orders"
+      );
+
+      await postgresPool.query(
+        "DELETE FROM cart_items"
+      );
+
+      await postgresPool.query(
+        "DELETE FROM carts"
+      );
+
+      await postgresPool.query(
+        "DELETE FROM customers"
+      );
+
+      await postgresPool.query(
+        "DELETE FROM inventory_items"
+      );
+
+      await postgresPool.query(
+        "DELETE FROM user_roles"
+      );
+
+      await postgresPool.query(
+        "DELETE FROM users"
+      );
+
+      const userResult =
+        await postgresPool.query<{
+          id: string;
+        }>(
+          `
+            INSERT INTO users (
+              auth_user_id
+            )
+            VALUES ($1)
+            RETURNING id
+          `,
+          [
+            `checkout-test-${Date.now()}-${Math.random()}`
+          ]
+        );
+
+      userId =
+        userResult.rows[0].id;
+
+      const customerResult =
+        await postgresPool.query<{
+          id: string;
+        }>(
+          `
+            INSERT INTO customers (
+              user_id,
+              first_name,
+              last_name
+            )
+            VALUES (
+              $1,
+              $2,
+              $3
+            )
+            RETURNING id
+          `,
+          [
+            userId,
+            "Checkout",
+            "Test"
+          ]
+        );
+
+      customerId =
+        customerResult.rows[0].id;
+
+      const cartResult =
+        await postgresPool.query<{
+          id: string;
+        }>(
+          `
+            INSERT INTO carts (
+              customer_id,
+              status
+            )
+            VALUES (
+              $1,
+              'ACTIVE'
+            )
+            RETURNING id
+          `,
+          [customerId]
+        );
+
+      cartId =
+        cartResult.rows[0].id;
+
+      await postgresPool.query(
         `
-          INSERT INTO customers (
-            user_id,
-            first_name,
-            last_name
+          INSERT INTO cart_items (
+            cart_id,
+            product_variant_id,
+            quantity
           )
           VALUES (
             $1,
-            'Checkout',
-            'Customer'
+            $2,
+            $3
           )
-          RETURNING id
-        `,
-        [userResult.rows[0].id]
-      );
-
-    customerId =
-      customerResult.rows[0].id;
-
-    const cartResult =
-      await postgresPool.query<{ id: string }>(
-        `
-          INSERT INTO carts (
-            customer_id,
-            status
-          )
-          VALUES (
-            $1,
-            'ACTIVE'
-          )
-          RETURNING id
-        `,
-        [customerId]
-      );
-
-    cartId =
-      cartResult.rows[0].id;
-
-    await postgresPool.query(
-      `
-        INSERT INTO cart_items (
-          cart_id,
-          product_variant_id,
-          quantity
-        )
-        VALUES (
-          $1,
-          $2,
-          2
-        )
-      `,
-      [
-        cartId,
-        variantId
-      ]
-    );
-
-    await postgresPool.query(
-      `
-        INSERT INTO inventory_items (
-          variant_id,
-          quantity
-        )
-        VALUES (
-          $1,
-          10
-        )
-      `,
-      [variantId]
-    );
-  });
-
-  it("should complete checkout atomically", async () => {
-    const order =
-      await repository.checkout(
-        customerId,
-        cartId,
-        [
-          createSnapshot(2)
-        ]
-      );
-
-    expect(order.id).toBeDefined();
-    expect(order.customerId)
-      .toBe(customerId);
-    expect(order.cartId)
-      .toBe(cartId);
-    expect(order.status)
-      .toBe("CONFIRMED");
-    expect(order.totalAmount)
-      .toBe(200);
-    expect(order.currency)
-      .toBe("USD");
-
-    expect(order.items)
-      .toHaveLength(1);
-
-    expect(order.items[0].productName)
-      .toBe("Checkout Product");
-
-    expect(order.items[0].sku)
-      .toBe("CHECKOUT-SKU-001");
-
-    expect(order.items[0].unitPrice)
-      .toBe(100);
-
-    expect(order.items[0].quantity)
-      .toBe(2);
-
-    const inventoryResult =
-      await postgresPool.query<{
-        quantity: number;
-      }>(
-        `
-          SELECT quantity
-          FROM inventory_items
-          WHERE variant_id = $1
-        `,
-        [variantId]
-      );
-
-    expect(
-      inventoryResult.rows[0].quantity
-    ).toBe(8);
-
-    const completedCart =
-      await postgresPool.query<{
-        status: string;
-        completed_at: Date | null;
-      }>(
-        `
-          SELECT
-            status,
-            completed_at
-          FROM carts
-          WHERE id = $1
-        `,
-        [cartId]
-      );
-
-    expect(
-      completedCart.rows[0].status
-    ).toBe("COMPLETED");
-
-    expect(
-      completedCart.rows[0].completed_at
-    ).not.toBeNull();
-
-    const activeCart =
-      await postgresPool.query<{
-        id: string;
-      }>(
-        `
-          SELECT id
-          FROM carts
-          WHERE customer_id = $1
-            AND status = 'ACTIVE'
-        `,
-        [customerId]
-      );
-
-    expect(activeCart.rows)
-      .toHaveLength(1);
-
-    expect(activeCart.rows[0].id)
-      .not.toBe(cartId);
-
-    const orderResult =
-      await postgresPool.query(
-        `
-          SELECT *
-          FROM orders
-          WHERE id = $1
-        `,
-        [order.id]
-      );
-
-    expect(orderResult.rows)
-      .toHaveLength(1);
-
-    const orderItemsResult =
-      await postgresPool.query(
-        `
-          SELECT *
-          FROM order_items
-          WHERE order_id = $1
-        `,
-        [order.id]
-      );
-
-    expect(orderItemsResult.rows)
-      .toHaveLength(1);
-  });
-
-  it("should rollback checkout when stock is insufficient", async () => {
-    await postgresPool.query(
-      `
-        UPDATE inventory_items
-        SET quantity = 1
-        WHERE variant_id = $1
-      `,
-      [variantId]
-    );
-
-    await expect(
-      repository.checkout(
-        customerId,
-        cartId,
-        [
-          createSnapshot(2)
-        ]
-      )
-    ).rejects.toMatchObject({
-      message: "Insufficient stock",
-      statusCode: 409
-    });
-
-    const inventoryResult =
-      await postgresPool.query<{
-        quantity: number;
-      }>(
-        `
-          SELECT quantity
-          FROM inventory_items
-          WHERE variant_id = $1
-        `,
-        [variantId]
-      );
-
-    expect(
-      inventoryResult.rows[0].quantity
-    ).toBe(1);
-
-    const cartResult =
-      await postgresPool.query<{
-        status: string;
-      }>(
-        `
-          SELECT status
-          FROM carts
-          WHERE id = $1
-        `,
-        [cartId]
-      );
-
-    expect(
-      cartResult.rows[0].status
-    ).toBe("ACTIVE");
-
-    const orderResult =
-      await postgresPool.query(
-        `
-          SELECT id
-          FROM orders
-          WHERE cart_id = $1
-        `,
-        [cartId]
-      );
-
-    expect(orderResult.rows)
-      .toHaveLength(0);
-
-    const activeCarts =
-      await postgresPool.query(
-        `
-          SELECT id
-          FROM carts
-          WHERE customer_id = $1
-            AND status = 'ACTIVE'
-        `,
-        [customerId]
-      );
-
-    expect(activeCarts.rows)
-      .toHaveLength(1);
-  });
-
-  it("should rollback checkout when cart changed", async () => {
-    await expect(
-      repository.checkout(
-        customerId,
-        cartId,
-        [
-          createSnapshot(1)
-        ]
-      )
-    ).rejects.toMatchObject({
-      message:
-        "Cart changed during checkout",
-      statusCode: 409
-    });
-
-    const inventoryResult =
-      await postgresPool.query<{
-        quantity: number;
-      }>(
-        `
-          SELECT quantity
-          FROM inventory_items
-          WHERE variant_id = $1
-        `,
-        [variantId]
-      );
-
-    expect(
-      inventoryResult.rows[0].quantity
-    ).toBe(10);
-
-    const cartResult =
-      await postgresPool.query<{
-        status: string;
-      }>(
-        `
-          SELECT status
-          FROM carts
-          WHERE id = $1
-        `,
-        [cartId]
-      );
-
-    expect(
-      cartResult.rows[0].status
-    ).toBe("ACTIVE");
-
-    const orders =
-      await postgresPool.query(
-        `
-          SELECT id
-          FROM orders
-          WHERE cart_id = $1
-        `,
-        [cartId]
-      );
-
-    expect(orders.rows)
-      .toHaveLength(0);
-  });
-
-  it("should prevent two concurrent checkouts from consuming the same stock", async () => {
-    await postgresPool.query(
-      `
-        UPDATE cart_items
-        SET quantity = 1
-        WHERE cart_id = $1
-      `,
-      [cartId]
-    );
-
-    await postgresPool.query(
-      `
-        UPDATE inventory_items
-        SET quantity = 1
-        WHERE variant_id = $1
-      `,
-      [variantId]
-    );
-
-    const secondUserResult =
-      await postgresPool.query<{
-        id: string;
-      }>(
-        `
-          INSERT INTO users (
-            auth_user_id
-          )
-          VALUES ($1)
-          RETURNING id
         `,
         [
-          `checkout-auth-second-${Date.now()}-${Math.random()}`
-        ]
-      );
-
-    const secondCustomerResult =
-      await postgresPool.query<{
-        id: string;
-      }>(
-        `
-          INSERT INTO customers (
-            user_id,
-            first_name,
-            last_name
-          )
-          VALUES (
-            $1,
-            'Second',
-            'Customer'
-          )
-          RETURNING id
-        `,
-        [secondUserResult.rows[0].id]
-      );
-
-    const secondCustomerId =
-      secondCustomerResult.rows[0].id;
-
-    const secondCartResult =
-      await postgresPool.query<{
-        id: string;
-      }>(
-        `
-          INSERT INTO carts (
-            customer_id,
-            status
-          )
-          VALUES (
-            $1,
-            'ACTIVE'
-          )
-          RETURNING id
-        `,
-        [secondCustomerId]
-      );
-
-    const secondCartId =
-      secondCartResult.rows[0].id;
-
-    await postgresPool.query(
-      `
-        INSERT INTO cart_items (
-          cart_id,
-          product_variant_id,
-          quantity
-        )
-        VALUES (
-          $1,
-          $2,
-          1
-        )
-      `,
-      [
-        secondCartId,
-        variantId
-      ]
-    );
-
-    const results =
-      await Promise.allSettled([
-        repository.checkout(
-          customerId,
           cartId,
-          [
-            createSnapshot(1)
-          ]
-        ),
-
-        repository.checkout(
-          secondCustomerId,
-          secondCartId,
-          [
-            createSnapshot(1)
-          ]
-        )
-      ]);
-
-    const fulfilled =
-      results.filter(
-        (result) =>
-          result.status === "fulfilled"
+          variantId,
+          2
+        ]
       );
 
-    const rejected =
-      results.filter(
-        (result) =>
-          result.status === "rejected"
-      );
-
-    expect(fulfilled)
-      .toHaveLength(1);
-
-    expect(rejected)
-      .toHaveLength(1);
-
-    if (
-      rejected[0].status === "rejected"
-    ) {
-      expect(
-        rejected[0].reason
-      ).toMatchObject({
-        message:
-          "Insufficient stock",
-        statusCode: 409
-      });
-    }
-
-    const inventoryResult =
-      await postgresPool.query<{
-        quantity: number;
-      }>(
-        `
-          SELECT quantity
-          FROM inventory_items
-          WHERE variant_id = $1
-        `,
-        [variantId]
-      );
-
-    expect(
-      inventoryResult.rows[0].quantity
-    ).toBe(0);
-
-    const ordersResult =
       await postgresPool.query(
         `
-          SELECT id
-          FROM orders
-        `
+          INSERT INTO inventory_items (
+            variant_id,
+            quantity,
+            reserved_quantity
+          )
+          VALUES (
+            $1,
+            $2,
+            $3
+          )
+        `,
+        [
+          variantId,
+          10,
+          0
+        ]
       );
+    });
 
-    expect(ordersResult.rows)
-      .toHaveLength(1);
+    it(
+      "should create a pending order, pending payment and reserve stock atomically",
+      async () => {
+        const result =
+          await repository.checkout(
+            customerId,
+            cartId,
+            items
+          );
 
-    const activeCartsResult =
-      await postgresPool.query<{
-        customer_id: string;
-      }>(
-        `
-          SELECT customer_id
-          FROM carts
-          WHERE status = 'ACTIVE'
-        `
-      );
+        expect(
+          result.order.status
+        ).toBe("PENDING");
 
-    expect(activeCartsResult.rows)
-      .toHaveLength(2);
-  });
-});
+        expect(
+          result.order.totalAmount
+        ).toBe(200);
+
+        expect(
+          result.paymentId
+        ).toBeDefined();
+
+        const paymentResult =
+          await postgresPool.query(
+            `
+              SELECT
+                status,
+                amount,
+                currency
+              FROM payments
+              WHERE id = $1
+            `,
+            [result.paymentId]
+          );
+
+        expect(
+          paymentResult.rows[0]
+            .status
+        ).toBe("PENDING");
+
+        expect(
+          Number(
+            paymentResult.rows[0]
+              .amount
+          )
+        ).toBe(200);
+
+        expect(
+          paymentResult.rows[0]
+            .currency
+        ).toBe("USD");
+
+        const inventoryResult =
+          await postgresPool.query(
+            `
+              SELECT
+                quantity,
+                reserved_quantity
+              FROM inventory_items
+              WHERE variant_id = $1
+            `,
+            [variantId]
+          );
+
+        expect(
+          inventoryResult.rows[0]
+            .quantity
+        ).toBe(10);
+
+        expect(
+          inventoryResult.rows[0]
+            .reserved_quantity
+        ).toBe(2);
+
+        const oldCartResult =
+          await postgresPool.query(
+            `
+              SELECT status
+              FROM carts
+              WHERE id = $1
+            `,
+            [cartId]
+          );
+
+        expect(
+          oldCartResult.rows[0]
+            .status
+        ).toBe("COMPLETED");
+
+        const activeCartResult =
+          await postgresPool.query(
+            `
+              SELECT id
+              FROM carts
+              WHERE
+                customer_id = $1
+                AND status = 'ACTIVE'
+            `,
+            [customerId]
+          );
+
+        expect(
+          activeCartResult.rows
+        ).toHaveLength(1);
+      }
+    );
+
+    it(
+      "should rollback checkout when available stock is insufficient",
+      async () => {
+        await postgresPool.query(
+          `
+            UPDATE inventory_items
+            SET reserved_quantity = 9
+            WHERE variant_id = $1
+          `,
+          [variantId]
+        );
+
+        await expect(
+          repository.checkout(
+            customerId,
+            cartId,
+            items
+          )
+        ).rejects.toThrow(
+          "Insufficient stock"
+        );
+
+        const orderResult =
+          await postgresPool.query(
+            "SELECT id FROM orders"
+          );
+
+        const paymentResult =
+          await postgresPool.query(
+            "SELECT id FROM payments"
+          );
+
+        expect(
+          orderResult.rows
+        ).toHaveLength(0);
+
+        expect(
+          paymentResult.rows
+        ).toHaveLength(0);
+
+        const inventoryResult =
+          await postgresPool.query(
+            `
+              SELECT
+                quantity,
+                reserved_quantity
+              FROM inventory_items
+              WHERE variant_id = $1
+            `,
+            [variantId]
+          );
+
+        expect(
+          inventoryResult.rows[0]
+            .quantity
+        ).toBe(10);
+
+        expect(
+          inventoryResult.rows[0]
+            .reserved_quantity
+        ).toBe(9);
+
+        const cartResult =
+          await postgresPool.query(
+            `
+              SELECT status
+              FROM carts
+              WHERE id = $1
+            `,
+            [cartId]
+          );
+
+        expect(
+          cartResult.rows[0].status
+        ).toBe("ACTIVE");
+      }
+    );
+
+    it(
+      "should rollback when cart changed during checkout",
+      async () => {
+        await postgresPool.query(
+          `
+            UPDATE cart_items
+            SET quantity = 3
+            WHERE cart_id = $1
+          `,
+          [cartId]
+        );
+
+        await expect(
+          repository.checkout(
+            customerId,
+            cartId,
+            items
+          )
+        ).rejects.toThrow(
+          "Cart changed during checkout"
+        );
+
+        const inventoryResult =
+          await postgresPool.query(
+            `
+              SELECT
+                quantity,
+                reserved_quantity
+              FROM inventory_items
+              WHERE variant_id = $1
+            `,
+            [variantId]
+          );
+
+        expect(
+          inventoryResult.rows[0]
+            .quantity
+        ).toBe(10);
+
+        expect(
+          inventoryResult.rows[0]
+            .reserved_quantity
+        ).toBe(0);
+
+        const orderResult =
+          await postgresPool.query(
+            "SELECT id FROM orders"
+          );
+
+        const paymentResult =
+          await postgresPool.query(
+            "SELECT id FROM payments"
+          );
+
+        expect(
+          orderResult.rows
+        ).toHaveLength(0);
+
+        expect(
+          paymentResult.rows
+        ).toHaveLength(0);
+      }
+    );
+
+    it(
+      "should prevent concurrent checkouts from reserving the same last stock",
+      async () => {
+        await postgresPool.query(
+          `
+            UPDATE inventory_items
+            SET
+              quantity = 2,
+              reserved_quantity = 0
+            WHERE variant_id = $1
+          `,
+          [variantId]
+        );
+
+        const secondUser =
+          await postgresPool.query<{
+            id: string;
+          }>(
+            `
+              INSERT INTO users (
+                auth_user_id
+              )
+              VALUES ($1)
+              RETURNING id
+            `,
+            [
+              `checkout-second-${Date.now()}-${Math.random()}`
+            ]
+          );
+
+        const secondCustomer =
+          await postgresPool.query<{
+            id: string;
+          }>(
+            `
+              INSERT INTO customers (
+                user_id,
+                first_name,
+                last_name
+              )
+              VALUES (
+                $1,
+                $2,
+                $3
+              )
+              RETURNING id
+            `,
+            [
+              secondUser.rows[0].id,
+              "Second",
+              "Customer"
+            ]
+          );
+
+        const secondCart =
+          await postgresPool.query<{
+            id: string;
+          }>(
+            `
+              INSERT INTO carts (
+                customer_id,
+                status
+              )
+              VALUES (
+                $1,
+                'ACTIVE'
+              )
+              RETURNING id
+            `,
+            [
+              secondCustomer.rows[0]
+                .id
+            ]
+          );
+
+        await postgresPool.query(
+          `
+            INSERT INTO cart_items (
+              cart_id,
+              product_variant_id,
+              quantity
+            )
+            VALUES (
+              $1,
+              $2,
+              $3
+            )
+          `,
+          [
+            secondCart.rows[0].id,
+            variantId,
+            2
+          ]
+        );
+
+        const results =
+          await Promise.allSettled([
+            repository.checkout(
+              customerId,
+              cartId,
+              items
+            ),
+            repository.checkout(
+              secondCustomer.rows[0]
+                .id,
+              secondCart.rows[0].id,
+              items
+            )
+          ]);
+
+        const fulfilled =
+          results.filter(
+            (result) =>
+              result.status ===
+              "fulfilled"
+          );
+
+        const rejected =
+          results.filter(
+            (result) =>
+              result.status ===
+              "rejected"
+          );
+
+        expect(
+          fulfilled
+        ).toHaveLength(1);
+
+        expect(
+          rejected
+        ).toHaveLength(1);
+
+        const inventoryResult =
+          await postgresPool.query(
+            `
+              SELECT
+                quantity,
+                reserved_quantity
+              FROM inventory_items
+              WHERE variant_id = $1
+            `,
+            [variantId]
+          );
+
+        expect(
+          inventoryResult.rows[0]
+            .quantity
+        ).toBe(2);
+
+        expect(
+          inventoryResult.rows[0]
+            .reserved_quantity
+        ).toBe(2);
+
+        const ordersResult =
+          await postgresPool.query(
+            "SELECT id FROM orders"
+          );
+
+        const paymentsResult =
+          await postgresPool.query(
+            "SELECT id FROM payments"
+          );
+
+        expect(
+          ordersResult.rows
+        ).toHaveLength(1);
+
+        expect(
+          paymentsResult.rows
+        ).toHaveLength(1);
+      }
+    );
+  }
+);

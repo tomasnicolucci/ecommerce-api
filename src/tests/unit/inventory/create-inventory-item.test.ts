@@ -60,9 +60,9 @@ describe("CreateInventoryItem", () => {
     expect(inventoryItem.id).toBeDefined();
     expect(inventoryItem.variantId).toBe(variantId);
     expect(inventoryItem.quantity).toBe(10);
-    expect(
-      inventoryRepository.inventoryItems
-    ).toHaveLength(1);
+    expect(inventoryRepository.inventoryItems).toHaveLength(1);
+    expect(inventoryItem.reservedQuantity).toBe(0);
+    expect(inventoryItem.availableQuantity).toBe(10);
   });
 
   it("should not create inventory for a non-existing variant", async () => {

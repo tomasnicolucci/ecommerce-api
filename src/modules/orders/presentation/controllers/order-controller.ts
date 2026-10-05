@@ -75,8 +75,8 @@ export class OrderController {
 
         const order =
             await this.getMyOrderByIdUseCase.execute(
-                orderId,
-                userId
+                userId,
+                orderId
             );
 
         res.status(200).json(

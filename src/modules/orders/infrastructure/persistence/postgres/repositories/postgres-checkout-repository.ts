@@ -1,6 +1,8 @@
-import type { PoolClient } from "pg";
-import { postgresPool } from "../../../../../../shared/infrastructure/database/postgres.js";
+import type {
+  PoolClient
+} from "pg";
 import { AppError } from "../../../../../../shared/domain/errors/app-error.js";
+import { postgresPool } from "../../../../../../shared/infrastructure/database/postgres.js";
 import { Order } from "../../../../domain/entities/order.js";
 import { OrderItem } from "../../../../domain/entities/order-item.js";
 import type {
@@ -16,12 +18,11 @@ interface CartRow {
 }
 
 interface CartItemRow {
-  variant_id: string;
+  product_variant_id: string;
   quantity: number;
 }
 
 interface InventoryRow {
-  variant_id: string;
   quantity: number;
   reserved_quantity: number;
 }
@@ -30,7 +31,10 @@ interface OrderRow {
   id: string;
   customer_id: string;
   cart_id: string;
-  status: "PENDING" | "CONFIRMED" | "CANCELLED";
+  status:
+  | "PENDING"
+  | "CONFIRMED"
+  | "CANCELLED";
   total_amount: string;
   currency: string;
   created_at: Date;
@@ -48,8 +52,7 @@ interface OrderItemRow {
 }
 
 export class PostgresCheckoutRepository
-  implements CheckoutRepository
-{
+  implements CheckoutRepository {
   async checkout(
     customerId: string,
     cartId: string,
@@ -61,101 +64,37 @@ export class PostgresCheckoutRepository
     try {
       await client.query("BEGIN");
 
-      const cartResult =
-        await client.query<CartRow>(
-          `
-            SELECT
-              id,
-              customer_id,
-              status
-            FROM carts
-            WHERE id = $1
-            FOR UPDATE
-          `,
-          [cartId]
-        );
-
-      const cart = cartResult.rows[0];
-
-      if (!cart) {
-        throw new AppError(
-          "Cart not found",
-          404
-        );
-      }
-
-      if (cart.customer_id !== customerId) {
-        throw new AppError(
-          "Cart not found",
-          404
-        );
-      }
-
-      if (cart.status !== "ACTIVE") {
-        throw new AppError(
-          "Cart is not active",
-          409
-        );
-      }
-
-      const cartItemsResult =
-        await client.query<CartItemRow>(
-          `
-            SELECT
-              variant_id,
-              quantity
-            FROM cart_items
-            WHERE cart_id = $1
-            ORDER BY variant_id
-          `,
-          [cartId]
-        );
-
-      if (cartItemsResult.rows.length === 0) {
-        throw new AppError(
-          "Cart is empty",
-          400
-        );
-      }
-
-      this.validateCartSnapshot(
-        cartItemsResult.rows,
+      await this.lockAndValidateCart(
+        client,
+        customerId,
+        cartId,
         items
       );
 
-      const sortedItems = [...items].sort(
-        (a, b) =>
-          a.variantId.localeCompare(
-            b.variantId
-          )
-      );
-
-      for (const item of sortedItems) {
-        await this.reserveStock(
-          client,
-          item.variantId,
-          item.quantity
+      const sortedItems =
+        [...items].sort(
+          (a, b) =>
+            a.variantId.localeCompare(
+              b.variantId
+            )
         );
-      }
 
-      const orderItems = items.map(
-        (item) =>
-          OrderItem.create({
-            productId: item.productId,
-            variantId: item.variantId,
-            productName: item.productName,
-            sku: item.sku,
-            unitPrice: item.unitPrice,
-            currency: item.currency,
-            quantity: item.quantity
-          })
+      await this.reserveInventory(
+        client,
+        sortedItems
       );
 
-      const order = Order.create(
-        customerId,
-        cartId,
-        orderItems
-      );
+      const totalAmount =
+        items.reduce(
+          (total, item) =>
+            total +
+            item.unitPrice *
+            item.quantity,
+          0
+        );
+
+      const currency =
+        items[0].currency;
 
       const orderResult =
         await client.query<OrderRow>(
@@ -167,7 +106,13 @@ export class PostgresCheckoutRepository
               total_amount,
               currency
             )
-            VALUES ($1, $2, $3, $4, $5)
+            VALUES (
+              $1,
+              $2,
+              'PENDING',
+              $3,
+              $4
+            )
             RETURNING
               id,
               customer_id,
@@ -178,22 +123,21 @@ export class PostgresCheckoutRepository
               created_at
           `,
           [
-            order.customerId,
-            order.cartId,
-            order.status,
-            order.totalAmount,
-            order.currency
+            customerId,
+            cartId,
+            totalAmount,
+            currency
           ]
         );
 
-      const createdOrder =
+      const orderRow =
         orderResult.rows[0];
 
-      const persistedItems: OrderItem[] =
+      const orderItems: OrderItem[] =
         [];
 
-      for (const item of order.items) {
-        const result =
+      for (const item of items) {
+        const itemResult =
           await client.query<OrderItemRow>(
             `
               INSERT INTO order_items (
@@ -207,8 +151,14 @@ export class PostgresCheckoutRepository
                 quantity
               )
               VALUES (
-                $1, $2, $3, $4,
-                $5, $6, $7, $8
+                $1,
+                $2,
+                $3,
+                $4,
+                $5,
+                $6,
+                $7,
+                $8
               )
               RETURNING
                 id,
@@ -221,7 +171,7 @@ export class PostgresCheckoutRepository
                 quantity
             `,
             [
-              createdOrder.id,
+              orderRow.id,
               item.productId,
               item.variantId,
               item.productName,
@@ -232,21 +182,30 @@ export class PostgresCheckoutRepository
             ]
           );
 
-        const row = result.rows[0];
+        const row =
+          itemResult.rows[0];
 
-        persistedItems.push(
-          OrderItem.restore(row.id, {
-            productId: row.product_id,
-            variantId:
-              row.product_variant_id,
-            productName:
-              row.product_name,
-            sku: row.sku,
-            unitPrice:
-              Number(row.unit_price),
-            currency: row.currency,
-            quantity: row.quantity
-          })
+        orderItems.push(
+          OrderItem.restore(
+            row.id,
+            {
+              productId:
+                row.product_id,
+              variantId:
+                row.product_variant_id,
+              productName:
+                row.product_name,
+              sku: row.sku,
+              unitPrice:
+                Number(
+                  row.unit_price
+                ),
+              currency:
+                row.currency,
+              quantity:
+                row.quantity
+            }
+          )
         );
       }
 
@@ -270,9 +229,9 @@ export class PostgresCheckoutRepository
             RETURNING id
           `,
           [
-            createdOrder.id,
-            order.totalAmount,
-            order.currency
+            orderRow.id,
+            totalAmount,
+            currency
           ]
         );
 
@@ -282,8 +241,6 @@ export class PostgresCheckoutRepository
           SET
             status = 'COMPLETED',
             completed_at =
-              CURRENT_TIMESTAMP,
-            updated_at =
               CURRENT_TIMESTAMP
           WHERE id = $1
         `,
@@ -296,52 +253,129 @@ export class PostgresCheckoutRepository
             customer_id,
             status
           )
-          VALUES ($1, 'ACTIVE')
+          VALUES (
+            $1,
+            'ACTIVE'
+          )
         `,
         [customerId]
       );
 
       await client.query("COMMIT");
 
-      return {
-        order: Order.restore(
-          createdOrder.id,
+      const order =
+        Order.restore(
+          orderRow.id,
           {
             customerId:
-              createdOrder.customer_id,
+              orderRow.customer_id,
             cartId:
-              createdOrder.cart_id,
+              orderRow.cart_id,
             status:
-              createdOrder.status,
+              orderRow.status,
             totalAmount:
               Number(
-                createdOrder.total_amount
+                orderRow.total_amount
               ),
             currency:
-              createdOrder.currency,
-            items: persistedItems,
+              orderRow.currency,
+            items: orderItems,
             createdAt:
-              createdOrder.created_at
+              orderRow.created_at
           }
-        ),
+        );
+
+      return {
+        order,
         paymentId:
           paymentResult.rows[0].id
       };
     } catch (error) {
-      await client.query("ROLLBACK");
+      await client.query(
+        "ROLLBACK"
+      );
+
       throw error;
     } finally {
       client.release();
     }
   }
 
-  private validateCartSnapshot(
-    cartItems: CartItemRow[],
-    snapshots: CheckoutItemSnapshot[]
-  ): void {
+  private async lockAndValidateCart(
+    client: PoolClient,
+    customerId: string,
+    cartId: string,
+    items: CheckoutItemSnapshot[]
+  ): Promise<void> {
+    const cartResult =
+      await client.query<CartRow>(
+        `
+          SELECT
+            id,
+            customer_id,
+            status
+          FROM carts
+          WHERE id = $1
+          FOR UPDATE
+        `,
+        [cartId]
+      );
+
+    const cart =
+      cartResult.rows[0];
+
+    if (!cart) {
+      throw new AppError(
+        "Cart not found",
+        404
+      );
+    }
+
     if (
-      cartItems.length !==
-      snapshots.length
+      cart.customer_id !==
+      customerId
+    ) {
+      throw new AppError(
+        "Cart not found",
+        404
+      );
+    }
+
+    if (
+      cart.status !== "ACTIVE"
+    ) {
+      throw new AppError(
+        "Cart is not active",
+        409
+      );
+    }
+
+    const cartItemsResult =
+      await client.query<CartItemRow>(
+        `
+          SELECT
+            product_variant_id,
+            quantity
+          FROM cart_items
+          WHERE cart_id = $1
+          ORDER BY product_variant_id
+        `,
+        [cartId]
+      );
+
+    if (
+      cartItemsResult.rows.length ===
+      0
+    ) {
+      throw new AppError(
+        "Cart is empty",
+        400
+      );
+    }
+
+    if (
+      cartItemsResult.rows.length !==
+      items.length
     ) {
       throw new AppError(
         "Cart changed during checkout",
@@ -349,18 +383,31 @@ export class PostgresCheckoutRepository
       );
     }
 
-    const snapshotMap = new Map(
-      snapshots.map((item) => [
-        item.variantId,
-        item.quantity
-      ])
-    );
+    const expectedItems =
+      [...items].sort(
+        (a, b) =>
+          a.variantId.localeCompare(
+            b.variantId
+          )
+      );
 
-    for (const cartItem of cartItems) {
+    for (
+      let index = 0;
+      index <
+      expectedItems.length;
+      index++
+    ) {
+      const expected =
+        expectedItems[index];
+
+      const current =
+        cartItemsResult.rows[index];
+
       if (
-        snapshotMap.get(
-          cartItem.variant_id
-        ) !== cartItem.quantity
+        current.product_variant_id !==
+        expected.variantId ||
+        current.quantity !==
+        expected.quantity
       ) {
         throw new AppError(
           "Cart changed during checkout",
@@ -370,56 +417,63 @@ export class PostgresCheckoutRepository
     }
   }
 
-  private async reserveStock(
+  private async reserveInventory(
     client: PoolClient,
-    variantId: string,
-    quantity: number
+    items: CheckoutItemSnapshot[]
   ): Promise<void> {
-    const result =
-      await client.query<InventoryRow>(
+    for (const item of items) {
+      const inventoryResult =
+        await client.query<InventoryRow>(
+          `
+            SELECT
+              quantity,
+              reserved_quantity
+            FROM inventory_items
+            WHERE variant_id = $1
+            FOR UPDATE
+          `,
+          [item.variantId]
+        );
+
+      const inventory =
+        inventoryResult.rows[0];
+
+      if (!inventory) {
+        throw new AppError(
+          "Inventory item not found",
+          404
+        );
+      }
+
+      const availableQuantity =
+        inventory.quantity -
+        inventory.reserved_quantity;
+
+      if (
+        availableQuantity <
+        item.quantity
+      ) {
+        throw new AppError(
+          "Insufficient stock",
+          409
+        );
+      }
+
+      await client.query(
         `
-          SELECT
-            variant_id,
-            quantity,
-            reserved_quantity
-          FROM inventory_items
-          WHERE variant_id = $1
-          FOR UPDATE
+          UPDATE inventory_items
+          SET
+            reserved_quantity =
+              reserved_quantity + $1,
+            updated_at =
+              CURRENT_TIMESTAMP
+          WHERE variant_id = $2
         `,
-        [variantId]
-      );
-
-    const inventory = result.rows[0];
-
-    if (!inventory) {
-      throw new AppError(
-        "Inventory item not found",
-        404
+        [
+          item.quantity,
+          item.variantId
+        ]
       );
     }
-
-    const availableQuantity =
-      inventory.quantity -
-      inventory.reserved_quantity;
-
-    if (availableQuantity < quantity) {
-      throw new AppError(
-        "Insufficient stock",
-        409
-      );
-    }
-
-    await client.query(
-      `
-        UPDATE inventory_items
-        SET
-          reserved_quantity =
-            reserved_quantity + $1,
-          updated_at =
-            CURRENT_TIMESTAMP
-        WHERE variant_id = $2
-      `,
-      [quantity, variantId]
-    );
   }
 }

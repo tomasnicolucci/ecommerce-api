@@ -31,7 +31,7 @@ describe("Inventory routes", () => {
         .post("/categories")
         .send({
           name: "Accessories",
-          slug: `accessories-${Date.now()}`,
+          slug: `accessories-${Date.now()}-${Math.random()}`,
           parentId: null,
           attributes: [
             {
@@ -50,14 +50,14 @@ describe("Inventory routes", () => {
         .post("/products")
         .send({
           name: "Logitech MX Master 3S",
-          slug: `logitech-mx-master-${Date.now()}`,
+          slug: `logitech-mx-master-${Date.now()}-${Math.random()}`,
           description: "Wireless mouse",
           categoryId: categoryResponse.body.id,
           attributes: {
             brand: "Logitech"
           },
           hasVariants: false,
-          sku: `LOG-MX3S-${Date.now()}`,
+          sku: `LOG-MX3S-${Date.now()}-${Math.random()}`,
           price: {
             amount: 120,
             currency: "USD"
@@ -86,6 +86,10 @@ describe("Inventory routes", () => {
     expect(response.body.variantId)
       .toBe(variantId);
     expect(response.body.quantity).toBe(10);
+    expect(response.body.reservedQuantity)
+      .toBe(0);
+    expect(response.body.availableQuantity)
+      .toBe(10);
   });
 
   it("should get inventory by variant id", async () => {
@@ -99,6 +103,15 @@ describe("Inventory routes", () => {
         quantity: 10
       });
 
+    await postgresPool.query(
+      `
+        UPDATE inventory_items
+        SET reserved_quantity = 3
+        WHERE variant_id = $1
+      `,
+      [variantId]
+    );
+
     const response =
       await request(testContext.app)
         .get(`/inventory/${variantId}`);
@@ -107,6 +120,10 @@ describe("Inventory routes", () => {
     expect(response.body.variantId)
       .toBe(variantId);
     expect(response.body.quantity).toBe(10);
+    expect(response.body.reservedQuantity)
+      .toBe(3);
+    expect(response.body.availableQuantity)
+      .toBe(7);
   });
 
   it("should increase stock", async () => {
@@ -131,6 +148,10 @@ describe("Inventory routes", () => {
 
     expect(response.status).toBe(200);
     expect(response.body.quantity).toBe(15);
+    expect(response.body.reservedQuantity)
+      .toBe(0);
+    expect(response.body.availableQuantity)
+      .toBe(15);
   });
 
   it("should decrease stock", async () => {
@@ -155,6 +176,10 @@ describe("Inventory routes", () => {
 
     expect(response.status).toBe(200);
     expect(response.body.quantity).toBe(6);
+    expect(response.body.reservedQuantity)
+      .toBe(0);
+    expect(response.body.availableQuantity)
+      .toBe(6);
   });
 
   it("should not decrease stock below zero", async () => {
@@ -180,6 +205,42 @@ describe("Inventory routes", () => {
     expect(response.status).toBe(400);
     expect(response.body.message)
       .toBe("Insufficient stock");
+  });
+
+  it("should not decrease stock below reserved quantity", async () => {
+    const variantId =
+      await createProductVariant();
+
+    await request(testContext.app)
+      .post("/inventory")
+      .send({
+        variantId,
+        quantity: 10
+      });
+
+    await postgresPool.query(
+      `
+        UPDATE inventory_items
+        SET reserved_quantity = 6
+        WHERE variant_id = $1
+      `,
+      [variantId]
+    );
+
+    const response =
+      await request(testContext.app)
+        .patch(
+          `/inventory/${variantId}/stock`
+        )
+        .send({
+          quantity: -5
+        });
+
+    expect(response.status).toBe(400);
+    expect(response.body.message)
+      .toBe(
+        "Stock cannot be lower than reserved quantity"
+      );
   });
 
   it("should not create duplicate inventory for a variant", async () => {

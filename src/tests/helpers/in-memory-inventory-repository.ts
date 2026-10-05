@@ -19,15 +19,21 @@ export class InMemoryInventoryRepository
   async save(
     inventoryItem: InventoryItem
   ): Promise<InventoryItem> {
-    const savedInventoryItem = InventoryItem.restore(
-      inventoryItem.id ?? `inventory-${this.inventoryItems.length + 1}`,
-      {
-        variantId: inventoryItem.variantId,
-        quantity: inventoryItem.quantity
-      }
-    );
+    const savedInventoryItem =
+      InventoryItem.restore(
+        inventoryItem.id ??
+          `inventory-${this.inventoryItems.length + 1}`,
+        {
+          variantId: inventoryItem.variantId,
+          quantity: inventoryItem.quantity,
+          reservedQuantity:
+            inventoryItem.reservedQuantity
+        }
+      );
 
-    this.inventoryItems.push(savedInventoryItem);
+    this.inventoryItems.push(
+      savedInventoryItem
+    );
 
     return savedInventoryItem;
   }
@@ -35,12 +41,15 @@ export class InMemoryInventoryRepository
   async update(
     inventoryItem: InventoryItem
   ): Promise<void> {
-    const index = this.inventoryItems.findIndex(
-      (item) => item.id === inventoryItem.id
-    );
+    const index =
+      this.inventoryItems.findIndex(
+        (item) =>
+          item.id === inventoryItem.id
+      );
 
     if (index !== -1) {
-      this.inventoryItems[index] = inventoryItem;
+      this.inventoryItems[index] =
+        inventoryItem;
     }
   }
 }

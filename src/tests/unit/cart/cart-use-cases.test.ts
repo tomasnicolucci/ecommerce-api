@@ -54,7 +54,8 @@ describe("Cart use cases", () => {
     inventoryRepository.inventoryItems.push(
       InventoryItem.restore("inventory-1", {
         variantId,
-        quantity: 10
+        quantity: 10,
+        reservedQuantity: 0
       })
     );
   });
@@ -126,18 +127,77 @@ describe("Cart use cases", () => {
     expect(cart.items[0]?.quantity).toBe(5);
   });
 
-  it("should reject quantity greater than stock", async () => {
+  it("should reject quantity greater than available stock", async () => {
     const useCase = new AddCartItem(
       cartRepository,
       productRepository,
       inventoryRepository
     );
 
+    inventoryRepository.inventoryItems[0] =
+      InventoryItem.restore("inventory-1", {
+        variantId,
+        quantity: 10,
+        reservedQuantity: 4
+      });
+
     await expect(
       useCase.execute({
         customerId,
         variantId,
-        quantity: 11
+        quantity: 7
+      })
+    ).rejects.toThrow("Insufficient stock");
+  });
+
+  it("should allow quantity equal to available stock", async () => {
+    const useCase = new AddCartItem(
+      cartRepository,
+      productRepository,
+      inventoryRepository
+    );
+
+    inventoryRepository.inventoryItems[0] =
+      InventoryItem.restore("inventory-1", {
+        variantId,
+        quantity: 10,
+        reservedQuantity: 4
+      });
+
+    const cart = await useCase.execute({
+      customerId,
+      variantId,
+      quantity: 6
+    });
+
+    expect(cart.items[0]?.quantity).toBe(6);
+  });
+
+  it("should consider existing cart quantity when checking available stock", async () => {
+    const useCase = new AddCartItem(
+      cartRepository,
+      productRepository,
+      inventoryRepository
+    );
+
+    inventoryRepository.inventoryItems[0] =
+      InventoryItem.restore("inventory-1", {
+        variantId,
+        quantity: 10,
+        reservedQuantity: 4
+      });
+
+    await useCase.execute({
+      customerId,
+      variantId,
+      quantity: 4
+    });
+
+    await expect(
+      useCase.execute({
+        customerId,
+        variantId,
+        quantity: 3
       })
     ).rejects.toThrow("Insufficient stock");
   });
@@ -170,7 +230,7 @@ describe("Cart use cases", () => {
     expect(cart.items[0]?.quantity).toBe(6);
   });
 
-  it("should reject an update greater than stock", async () => {
+  it("should reject an update greater than available stock", async () => {
     const addCartItem = new AddCartItem(
       cartRepository,
       productRepository,
@@ -183,6 +243,13 @@ describe("Cart use cases", () => {
       quantity: 2
     });
 
+    inventoryRepository.inventoryItems[0] =
+      InventoryItem.restore("inventory-1", {
+        variantId,
+        quantity: 10,
+        reservedQuantity: 4
+      });
+
     const updateQuantity =
       new UpdateCartItemQuantity(
         cartRepository,
@@ -193,9 +260,44 @@ describe("Cart use cases", () => {
       updateQuantity.execute({
         customerId,
         variantId,
-        quantity: 11
+        quantity: 7
       })
     ).rejects.toThrow("Insufficient stock");
+  });
+
+  it("should update quantity up to available stock", async () => {
+    const addCartItem = new AddCartItem(
+      cartRepository,
+      productRepository,
+      inventoryRepository
+    );
+
+    await addCartItem.execute({
+      customerId,
+      variantId,
+      quantity: 2
+    });
+
+    inventoryRepository.inventoryItems[0] =
+      InventoryItem.restore("inventory-1", {
+        variantId,
+        quantity: 10,
+        reservedQuantity: 4
+      });
+
+    const updateQuantity =
+      new UpdateCartItemQuantity(
+        cartRepository,
+        inventoryRepository
+      );
+
+    const cart = await updateQuantity.execute({
+      customerId,
+      variantId,
+      quantity: 6
+    });
+
+    expect(cart.items[0]?.quantity).toBe(6);
   });
 
   it("should remove an item", async () => {

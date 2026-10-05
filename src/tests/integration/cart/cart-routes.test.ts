@@ -49,6 +49,10 @@ describe("Cart routes", () => {
 
   beforeEach(async () => {
     await postgresPool.query(
+      "DELETE FROM payments"
+    );
+
+    await postgresPool.query(
       "DELETE FROM order_items"
     );
 
@@ -182,16 +186,12 @@ describe("Cart routes", () => {
         .get("/carts/me");
 
     expect(response.status).toBe(200);
-
     expect(response.body.id)
       .toBeDefined();
-
     expect(response.body.customerId)
       .toBe(customerId);
-
     expect(response.body.status)
       .toBe("ACTIVE");
-
     expect(response.body.items)
       .toEqual([]);
   });
@@ -206,17 +206,13 @@ describe("Cart routes", () => {
         });
 
     expect(response.status).toBe(200);
-
     expect(response.body.customerId)
       .toBe(customerId);
-
     expect(response.body.items)
       .toHaveLength(1);
-
     expect(
       response.body.items[0].variantId
     ).toBe(variantId);
-
     expect(
       response.body.items[0].quantity
     ).toBe(2);
@@ -239,10 +235,8 @@ describe("Cart routes", () => {
         });
 
     expect(response.status).toBe(200);
-
     expect(response.body.items)
       .toHaveLength(1);
-
     expect(
       response.body.items[0].quantity
     ).toBe(5);
@@ -266,7 +260,6 @@ describe("Cart routes", () => {
         });
 
     expect(response.status).toBe(200);
-
     expect(
       response.body.items[0].quantity
     ).toBe(6);
@@ -287,12 +280,11 @@ describe("Cart routes", () => {
         );
 
     expect(response.status).toBe(200);
-
     expect(response.body.items)
       .toEqual([]);
   });
 
-  it("should reject quantity greater than available stock", async () => {
+  it("should reject quantity greater than physical stock", async () => {
     const response =
       await request(testApp)
         .post("/carts/me/items")
@@ -302,7 +294,84 @@ describe("Cart routes", () => {
         });
 
     expect(response.status).toBe(400);
+    expect(response.body.message)
+      .toBe("Insufficient stock");
+  });
 
+  it("should reject quantity greater than available stock when stock is reserved", async () => {
+    await postgresPool.query(
+      `
+        UPDATE inventory_items
+        SET reserved_quantity = 4
+        WHERE variant_id = $1
+      `,
+      [variantId]
+    );
+
+    const response =
+      await request(testApp)
+        .post("/carts/me/items")
+        .send({
+          variantId,
+          quantity: 7
+        });
+
+    expect(response.status).toBe(400);
+    expect(response.body.message)
+      .toBe("Insufficient stock");
+  });
+
+  it("should allow quantity equal to available stock", async () => {
+    await postgresPool.query(
+      `
+        UPDATE inventory_items
+        SET reserved_quantity = 4
+        WHERE variant_id = $1
+      `,
+      [variantId]
+    );
+
+    const response =
+      await request(testApp)
+        .post("/carts/me/items")
+        .send({
+          variantId,
+          quantity: 6
+        });
+
+    expect(response.status).toBe(200);
+    expect(
+      response.body.items[0].quantity
+    ).toBe(6);
+  });
+
+  it("should reject update greater than available stock", async () => {
+    await request(testApp)
+      .post("/carts/me/items")
+      .send({
+        variantId,
+        quantity: 2
+      });
+
+    await postgresPool.query(
+      `
+        UPDATE inventory_items
+        SET reserved_quantity = 4
+        WHERE variant_id = $1
+      `,
+      [variantId]
+    );
+
+    const response =
+      await request(testApp)
+        .patch(
+          `/carts/me/items/${variantId}`
+        )
+        .send({
+          quantity: 7
+        });
+
+    expect(response.status).toBe(400);
     expect(response.body.message)
       .toBe("Insufficient stock");
   });
@@ -329,7 +398,6 @@ describe("Cart routes", () => {
         .get("/carts/me");
 
     expect(response.status).toBe(404);
-
     expect(response.body.message)
       .toBe("Customer not found");
   });

@@ -1,7 +1,15 @@
+import { ValidationError } from "../../../../shared/domain/errors/validation-error.js";
+
 interface InventoryItemProps {
   variantId: string;
   quantity: number;
   reservedQuantity: number;
+}
+
+interface CreateInventoryItemProps {
+  variantId: string;
+  quantity: number;
+  reservedQuantity?: number;
 }
 
 export class InventoryItem {
@@ -11,48 +19,19 @@ export class InventoryItem {
   ) { }
 
   static create(
-    props: Omit<
-      InventoryItemProps,
-      "reservedQuantity"
-    > & {
-      reservedQuantity?: number;
-    }
+    props: CreateInventoryItemProps
   ): InventoryItem {
     const reservedQuantity =
       props.reservedQuantity ?? 0;
 
-    if (!props.variantId.trim()) {
-      throw new Error(
-        "Variant id is required"
-      );
-    }
-
-    if (
-      !Number.isInteger(props.quantity) ||
-      props.quantity < 0
-    ) {
-      throw new Error(
-        "Inventory quantity must be a non-negative integer"
-      );
-    }
-
-    if (
-      !Number.isInteger(reservedQuantity) ||
-      reservedQuantity < 0
-    ) {
-      throw new Error(
-        "Reserved quantity must be a non-negative integer"
-      );
-    }
-
-    if (
-      reservedQuantity >
+    this.validateQuantity(
       props.quantity
-    ) {
-      throw new Error(
-        "Reserved quantity cannot exceed stock quantity"
-      );
-    }
+    );
+
+    this.validateReservedQuantity(
+      reservedQuantity,
+      props.quantity
+    );
 
     return new InventoryItem(
       null,
@@ -68,6 +47,15 @@ export class InventoryItem {
     id: string,
     props: InventoryItemProps
   ): InventoryItem {
+    this.validateQuantity(
+      props.quantity
+    );
+
+    this.validateReservedQuantity(
+      props.reservedQuantity,
+      props.quantity
+    );
+
     return new InventoryItem(
       id,
       props
@@ -94,22 +82,23 @@ export class InventoryItem {
   }
 
   adjustQuantity(
-    quantity: number
+    adjustment: number
   ): void {
     if (
-      !Number.isInteger(quantity) ||
-      quantity === 0
+      !Number.isInteger(adjustment) ||
+      adjustment === 0
     ) {
-      throw new Error(
+      throw new ValidationError(
         "Stock adjustment must be a non-zero integer"
       );
     }
 
     const newQuantity =
-      this.props.quantity + quantity;
+      this.props.quantity +
+      adjustment;
 
     if (newQuantity < 0) {
-      throw new Error(
+      throw new ValidationError(
         "Insufficient stock"
       );
     }
@@ -118,12 +107,50 @@ export class InventoryItem {
       newQuantity <
       this.props.reservedQuantity
     ) {
-      throw new Error(
+      throw new ValidationError(
         "Stock cannot be lower than reserved quantity"
       );
     }
 
     this.props.quantity =
       newQuantity;
+  }
+
+  private static validateQuantity(
+    quantity: number
+  ): void {
+    if (
+      !Number.isInteger(quantity) ||
+      quantity < 0
+    ) {
+      throw new ValidationError(
+        "Inventory quantity must be a non-negative integer"
+      );
+    }
+  }
+
+  private static validateReservedQuantity(
+    reservedQuantity: number,
+    quantity: number
+  ): void {
+    if (
+      !Number.isInteger(
+        reservedQuantity
+      ) ||
+      reservedQuantity < 0
+    ) {
+      throw new ValidationError(
+        "Reserved quantity must be a non-negative integer"
+      );
+    }
+
+    if (
+      reservedQuantity >
+      quantity
+    ) {
+      throw new ValidationError(
+        "Reserved quantity cannot exceed stock quantity"
+      );
+    }
   }
 }

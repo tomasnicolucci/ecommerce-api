@@ -17,7 +17,8 @@ import type { CustomerRepository } from "../../../modules/customers/domain/repos
 import type { ProductRepository } from "../../../modules/catalog/domain/repositories/product-repository.js";
 import type {
   CheckoutItemSnapshot,
-  CheckoutRepository
+  CheckoutRepository,
+  CheckoutResult
 } from "../../../modules/orders/domain/repositories/checkout-repository.js";
 
 const customer =
@@ -80,8 +81,7 @@ const product =
   );
 
 class FakeCustomerRepository
-  implements CustomerRepository
-{
+  implements CustomerRepository {
   async findById() {
     return customer;
   }
@@ -94,12 +94,11 @@ class FakeCustomerRepository
     return customer;
   }
 
-  async update(): Promise<void> {}
+  async update(): Promise<void> { }
 }
 
 class FakeCartRepository
-  implements CartRepository
-{
+  implements CartRepository {
   async findActiveByCustomerId() {
     return cart;
   }
@@ -116,14 +115,13 @@ class FakeCartRepository
     return cartItem;
   }
 
-  async updateItem(): Promise<void> {}
+  async updateItem(): Promise<void> { }
 
-  async removeItem(): Promise<void> {}
+  async removeItem(): Promise<void> { }
 }
 
 class FakeProductRepository
-  implements ProductRepository
-{
+  implements ProductRepository {
   async findById() {
     return product;
   }
@@ -148,14 +146,13 @@ class FakeProductRepository
     return product;
   }
 
-  async update(): Promise<void> {}
+  async update(): Promise<void> { }
 
-  async delete(): Promise<void> {}
+  async delete(): Promise<void> { }
 }
 
 class FakeCheckoutRepository
-  implements CheckoutRepository
-{
+  implements CheckoutRepository {
   public receivedItems:
     CheckoutItemSnapshot[] = [];
 
@@ -163,7 +160,7 @@ class FakeCheckoutRepository
     customerId: string,
     cartId: string,
     items: CheckoutItemSnapshot[]
-  ): Promise<Order> {
+  ): Promise<CheckoutResult> {
     this.receivedItems = items;
 
     const orderItems =
@@ -186,11 +183,17 @@ class FakeCheckoutRepository
         })
       );
 
-    return Order.create(
-      customerId,
-      cartId,
-      orderItems
-    );
+    const order =
+      Order.create(
+        customerId,
+        cartId,
+        orderItems
+      );
+
+    return {
+      order,
+      paymentId: "payment-1"
+    };
   }
 }
 
@@ -207,22 +210,28 @@ describe("Checkout", () => {
         checkoutRepository
       );
 
-    const order =
+    const result =
       await checkout.execute(
         "user-1"
       );
 
-    expect(order.customerId)
+    expect(result.order.customerId)
       .toBe("customer-1");
 
-    expect(order.cartId)
+    expect(result.order.cartId)
       .toBe("cart-1");
 
-    expect(order.totalAmount)
+    expect(result.order.status)
+      .toBe("PENDING");
+
+    expect(result.order.totalAmount)
       .toBe(200);
 
-    expect(order.currency)
+    expect(result.order.currency)
       .toBe("USD");
+
+    expect(result.paymentId)
+      .toBe("payment-1");
 
     expect(
       checkoutRepository.receivedItems

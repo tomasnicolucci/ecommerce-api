@@ -5,11 +5,9 @@ import type { OrderRepository } from "../../domain/repositories/order-repository
 
 export class GetMyOrderById {
   constructor(
-    private readonly customerRepository:
-      CustomerRepository,
-    private readonly orderRepository:
-      OrderRepository
-  ) {}
+    private readonly customerRepository: CustomerRepository,
+    private readonly orderRepository: OrderRepository
+  ) { }
 
   async execute(
     userId: string,
