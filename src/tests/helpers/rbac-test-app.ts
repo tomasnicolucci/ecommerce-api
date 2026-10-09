@@ -1,9 +1,8 @@
-import express, {
-  type RequestHandler
-} from "express";
+import express, { type RequestHandler } from "express";
 import { createCategoryRouter } from "../../modules/catalog/presentation/routes/category-routes.js";
 import { createProductRouter } from "../../modules/catalog/presentation/routes/product-routes.js";
 import { createInventoryRouter } from "../../modules/inventory/presentation/routes/inventory-routes.js";
+import { createPromotionRouter } from "../../modules/promotions/presentation/routes/promotion-routes.js";
 import { postgresPool } from "../../shared/infrastructure/database/postgres.js";
 import { errorHandler } from "../../shared/presentation/middlewares/error-handler.js";
 
@@ -42,6 +41,11 @@ export const createRbacTestApp = () => {
   app.use(
     "/inventory",
     createInventoryRouter(fakeAuthenticate)
+  );
+
+  app.use(
+    "/promotions",
+    createPromotionRouter(fakeAuthenticate)
   );
 
   app.use(errorHandler);
