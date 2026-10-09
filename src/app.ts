@@ -9,6 +9,7 @@ import { cartRouter } from "./modules/cart/presentation/routes/cart-routes.js";
 import { customerRouter } from "./modules/customers/presentation/routes/customer-routes.js";
 import { orderRouter } from "./modules/orders/presentation/routes/order-routes.js";
 import { paymentRouter } from "./modules/payments/presentation/routes/payment-routes.js";
+import { promotionRouter } from "./modules/promotions/presentation/routes/promotion-routes.js";
 
 export const app = express();
 
@@ -42,5 +43,6 @@ app.use("/carts", cartRouter);
 app.use("/customers", customerRouter);
 app.use("/orders", orderRouter);
 app.use("/payments", paymentRouter);
+app.use("/promotions", promotionRouter);
 
 app.use(errorHandler);
