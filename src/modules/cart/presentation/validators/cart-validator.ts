@@ -12,3 +12,13 @@ export const updateCartItemQuantitySchema = z.object({
     quantity: z.number().int().positive()
   })
 });
+
+export const applyCartPromotionSchema = z.object({
+  body: z.object({
+    code: z.string()
+      .trim()
+      .min(3)
+      .max(64)
+      .regex(/^[a-zA-Z0-9_-]+$/)
+  })
+});

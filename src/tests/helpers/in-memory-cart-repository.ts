@@ -2,9 +2,7 @@ import { Cart } from "../../modules/cart/domain/entities/cart.js";
 import { CartItem } from "../../modules/cart/domain/entities/cart-item.js";
 import type { CartRepository } from "../../modules/cart/domain/repositories/cart-repository.js";
 
-export class InMemoryCartRepository
-  implements CartRepository
-{
+export class InMemoryCartRepository implements CartRepository {
   public carts: Cart[] = [];
   public items: CartItem[] = [];
 
@@ -28,7 +26,8 @@ export class InMemoryCartRepository
     return Cart.restore(cart.id, {
       customerId: cart.customerId,
       status: cart.status,
-      items: cartItems
+      items: cartItems,
+      promotionCode: cart.promotionCode
     });
   }
 
@@ -38,7 +37,8 @@ export class InMemoryCartRepository
       {
         customerId: cart.customerId,
         status: cart.status,
-        items: []
+        items: [],
+        promotionCode: cart.promotionCode
       }
     );
 
@@ -60,9 +60,7 @@ export class InMemoryCartRepository
     );
   }
 
-  async addItem(
-    cartItem: CartItem
-  ): Promise<CartItem> {
+  async addItem(cartItem: CartItem): Promise<CartItem> {
     const savedItem = CartItem.restore(
       cartItem.id ?? `cart-item-${this.items.length + 1}`,
       {
@@ -77,9 +75,7 @@ export class InMemoryCartRepository
     return savedItem;
   }
 
-  async updateItem(
-    cartItem: CartItem
-  ): Promise<void> {
+  async updateItem(cartItem: CartItem): Promise<void> {
     const index = this.items.findIndex(
       (item) => item.id === cartItem.id
     );
@@ -100,5 +96,27 @@ export class InMemoryCartRepository
           item.variantId === variantId
         )
     );
+  }
+
+  async setPromotionCode(
+    cartId: string,
+    promotionCode: string | null
+  ): Promise<void> {
+    const index = this.carts.findIndex(
+      (cart) => cart.id === cartId && cart.isActive
+    );
+
+    if (index === -1) {
+      return;
+    }
+
+    const cart = this.carts[index];
+
+    this.carts[index] = Cart.restore(cartId, {
+      customerId: cart.customerId,
+      status: cart.status,
+      items: [],
+      promotionCode
+    });
   }
 }

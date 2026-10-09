@@ -8,6 +8,7 @@ import { authenticate } from "../../../auth/auth-container.js";
 import { cartController } from "../../cart-container.js";
 import {
   addCartItemSchema,
+  applyCartPromotionSchema,
   updateCartItemQuantitySchema
 } from "../validators/cart-validator.js";
 
@@ -32,9 +33,7 @@ export const createCartRouter = (
   router.patch(
     "/me/items/:variantId",
     validate(updateCartItemQuantitySchema),
-    asyncHandler(
-      cartController.updateItemQuantity
-    )
+    asyncHandler(cartController.updateItemQuantity)
   );
 
   router.delete(
@@ -42,8 +41,18 @@ export const createCartRouter = (
     asyncHandler(cartController.removeItem)
   );
 
+  router.post(
+    "/me/promotion",
+    validate(applyCartPromotionSchema),
+    asyncHandler(cartController.applyPromotion)
+  );
+
+  router.delete(
+    "/me/promotion",
+    asyncHandler(cartController.removePromotion)
+  );
+
   return router;
 };
 
-export const cartRouter =
-  createCartRouter(authenticate);
+export const cartRouter = createCartRouter(authenticate);

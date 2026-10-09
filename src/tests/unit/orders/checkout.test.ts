@@ -118,6 +118,13 @@ class FakeCartRepository
   async updateItem(): Promise<void> { }
 
   async removeItem(): Promise<void> { }
+  
+  async setPromotionCode(
+    _cartId: string,
+    _promotionCode: string | null
+  ): Promise<void> {
+    // Not used by checkout tests
+  }
 }
 
 class FakeProductRepository

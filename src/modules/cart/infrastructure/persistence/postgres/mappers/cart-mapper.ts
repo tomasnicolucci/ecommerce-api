@@ -6,6 +6,7 @@ interface CartRow {
   id: string;
   customer_id: string;
   status: CartStatus;
+  promotion_code?: string | null;
 }
 
 interface CartItemRow {
@@ -31,7 +32,8 @@ export class CartMapper {
     return Cart.restore(cartRow.id, {
       customerId: cartRow.customer_id,
       status: cartRow.status,
-      items
+      items,
+      promotionCode: cartRow.promotion_code ?? null
     });
   }
 

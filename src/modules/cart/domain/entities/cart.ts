@@ -9,13 +9,14 @@ interface CartProps {
   customerId: string;
   status: CartStatus;
   items: CartItem[];
+  promotionCode?: string | null;
 }
 
 export class Cart {
   private constructor(
     public readonly id: string | null,
     private props: CartProps
-  ) {}
+  ) { }
 
   static create(customerId: string): Cart {
     if (!customerId.trim()) {
@@ -25,7 +26,8 @@ export class Cart {
     return new Cart(null, {
       customerId,
       status: "ACTIVE",
-      items: []
+      items: [],
+      promotionCode: null
     });
   }
 
@@ -33,7 +35,10 @@ export class Cart {
     id: string,
     props: CartProps
   ): Cart {
-    return new Cart(id, props);
+    return new Cart(id, {
+      ...props,
+      promotionCode: props.promotionCode ?? null
+    });
   }
 
   get customerId(): string {
@@ -46,6 +51,10 @@ export class Cart {
 
   get items(): CartItem[] {
     return [...this.props.items];
+  }
+
+  get promotionCode(): string | null {
+    return this.props.promotionCode ?? null;
   }
 
   get isActive(): boolean {

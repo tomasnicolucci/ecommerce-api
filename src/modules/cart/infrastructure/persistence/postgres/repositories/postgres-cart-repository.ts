@@ -5,14 +5,14 @@ import type { CartRepository } from "../../../../domain/repositories/cart-reposi
 import { CartMapper } from "../mappers/cart-mapper.js";
 
 export class PostgresCartRepository
-  implements CartRepository
-{
+  implements CartRepository {
+
   async findActiveByCustomerId(
     customerId: string
   ): Promise<Cart | null> {
     const cartResult = await postgresPool.query(
       `
-        SELECT id, customer_id, status
+        SELECT id, customer_id, status, promotion_code
         FROM carts
         WHERE customer_id = $1
           AND status = 'ACTIVE'
@@ -52,12 +52,21 @@ export class PostgresCartRepository
       `
         INSERT INTO carts (
           customer_id,
-          status
+          status,
+          promotion_code
         )
-        VALUES ($1, $2)
-        RETURNING id, customer_id, status
+        VALUES ($1, $2, $3)
+        RETURNING
+          id,
+          customer_id,
+          status,
+          promotion_code
       `,
-      [cart.customerId, cart.status]
+      [
+        cart.customerId,
+        cart.status,
+        cart.promotionCode
+      ]
     );
 
     return CartMapper.toDomain(
@@ -129,8 +138,9 @@ export class PostgresCartRepository
     await postgresPool.query(
       `
         UPDATE cart_items
-        SET quantity = $1,
-            updated_at = CURRENT_TIMESTAMP
+        SET
+          quantity = $1,
+          updated_at = CURRENT_TIMESTAMP
         WHERE id = $2
       `,
       [
@@ -151,6 +161,21 @@ export class PostgresCartRepository
           AND product_variant_id = $2
       `,
       [cartId, variantId]
+    );
+  }
+
+  async setPromotionCode(
+    cartId: string,
+    promotionCode: string | null
+  ): Promise<void> {
+    await postgresPool.query(
+      `
+        UPDATE carts
+        SET promotion_code = $2
+        WHERE id = $1
+          AND status = 'ACTIVE'
+      `,
+      [cartId, promotionCode]
     );
   }
 }

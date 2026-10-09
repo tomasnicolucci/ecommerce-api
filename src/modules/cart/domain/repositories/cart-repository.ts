@@ -25,4 +25,9 @@ export interface CartRepository {
     cartId: string,
     variantId: string
   ): Promise<void>;
+
+  setPromotionCode(
+    cartId: string,
+    promotionCode: string | null
+  ): Promise<void>;
 }
