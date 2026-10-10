@@ -1,98 +1,133 @@
 import type { OrderItem } from "./order-item.js";
 
 export type OrderStatus =
-    | "PENDING"
-    | "CONFIRMED"
-    | "CANCELLED";
+  | "PENDING"
+  | "CONFIRMED"
+  | "CANCELLED";
+
+export type OrderDiscountType =
+  | "PERCENTAGE"
+  | "FIXED";
 
 interface OrderProps {
-    customerId: string;
-    cartId: string;
-    status: OrderStatus;
-    totalAmount: number;
-    currency: string;
-    items: OrderItem[];
-    createdAt: Date;
+  customerId: string;
+  cartId: string;
+  status: OrderStatus;
+  totalAmount: number;
+  currency: string;
+  items: OrderItem[];
+  createdAt: Date;
+  subtotalAmount?: number;
+  discountAmount?: number;
+  promotionId?: string | null;
+  couponCode?: string | null;
+  discountType?: OrderDiscountType | null;
+  discountValue?: number | null;
 }
 
 export class Order {
-    private constructor(
-        public readonly id: string | null,
-        private props: OrderProps
-    ) { }
+  private constructor(
+    public readonly id: string | null,
+    private props: OrderProps
+  ) {}
 
-    static create(
-        customerId: string,
-        cartId: string,
-        items: OrderItem[]
-    ): Order {
-        if (items.length === 0) {
-            throw new Error(
-                "Order must contain at least one item"
-            );
-        }
-
-        const currencies =
-            new Set(
-                items.map((item) => item.currency)
-            );
-
-        if (currencies.size !== 1) {
-            throw new Error(
-                "All order items must use the same currency"
-            );
-        }
-
-        const totalAmount =
-            items.reduce(
-                (total, item) =>
-                    total + item.subtotal,
-                0
-            );
-
-        return new Order(null, {
-            customerId,
-            cartId,
-            status: "PENDING",
-            totalAmount,
-            currency: items[0].currency,
-            items,
-            createdAt: new Date()
-        });
+  static create(
+    customerId: string,
+    cartId: string,
+    items: OrderItem[]
+  ): Order {
+    if (items.length === 0) {
+      throw new Error(
+        "Order must contain at least one item"
+      );
     }
 
-    static restore(
-        id: string,
-        props: OrderProps
-    ): Order {
-        return new Order(id, props);
+    const currencies = new Set(
+      items.map((item) => item.currency)
+    );
+
+    if (currencies.size !== 1) {
+      throw new Error(
+        "All order items must use the same currency"
+      );
     }
 
-    get customerId(): string {
-        return this.props.customerId;
-    }
+    const subtotalCents = items.reduce(
+      (total, item) =>
+        total + Math.round(item.unitPrice * 100) * item.quantity,
+      0
+    );
 
-    get cartId(): string {
-        return this.props.cartId;
-    }
+    return new Order(null, {
+      customerId,
+      cartId,
+      status: "PENDING",
+      subtotalAmount: subtotalCents / 100,
+      discountAmount: 0,
+      totalAmount: subtotalCents / 100,
+      currency: items[0].currency,
+      items,
+      createdAt: new Date(),
+      promotionId: null,
+      couponCode: null,
+      discountType: null,
+      discountValue: null
+    });
+  }
 
-    get status(): OrderStatus {
-        return this.props.status;
-    }
+  static restore(id: string, props: OrderProps): Order {
+    return new Order(id, props);
+  }
 
-    get totalAmount(): number {
-        return this.props.totalAmount;
-    }
+  get customerId(): string {
+    return this.props.customerId;
+  }
 
-    get currency(): string {
-        return this.props.currency;
-    }
+  get cartId(): string {
+    return this.props.cartId;
+  }
 
-    get items(): OrderItem[] {
-        return [...this.props.items];
-    }
+  get status(): OrderStatus {
+    return this.props.status;
+  }
 
-    get createdAt(): Date {
-        return this.props.createdAt;
-    }
+  get subtotalAmount(): number {
+    return this.props.subtotalAmount ?? this.props.totalAmount;
+  }
+
+  get discountAmount(): number {
+    return this.props.discountAmount ?? 0;
+  }
+
+  get totalAmount(): number {
+    return this.props.totalAmount;
+  }
+
+  get promotionId(): string | null {
+    return this.props.promotionId ?? null;
+  }
+
+  get couponCode(): string | null {
+    return this.props.couponCode ?? null;
+  }
+
+  get discountType(): OrderDiscountType | null {
+    return this.props.discountType ?? null;
+  }
+
+  get discountValue(): number | null {
+    return this.props.discountValue ?? null;
+  }
+
+  get currency(): string {
+    return this.props.currency;
+  }
+
+  get items(): OrderItem[] {
+    return [...this.props.items];
+  }
+
+  get createdAt(): Date {
+    return this.props.createdAt;
+  }
 }

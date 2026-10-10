@@ -41,6 +41,10 @@ describe("Customer routes", () => {
 
   beforeEach(async () => {
     await postgresPool.query(
+      "DELETE FROM promotion_redemptions"
+    );
+
+    await postgresPool.query(
       "DELETE FROM payments"
     );
 
@@ -99,10 +103,8 @@ describe("Customer routes", () => {
     expect(response.status).toBe(201);
     expect(response.body.id).toBeDefined();
     expect(response.body.userId).toBe(userId);
-    expect(response.body.firstName)
-      .toBe("John");
-    expect(response.body.lastName)
-      .toBe("Doe");
+    expect(response.body.firstName).toBe("John");
+    expect(response.body.lastName).toBe("Doe");
   });
 
   it("should create a customer with null profile fields", async () => {
@@ -115,10 +117,8 @@ describe("Customer routes", () => {
         });
 
     expect(response.status).toBe(201);
-    expect(response.body.firstName)
-      .toBeNull();
-    expect(response.body.lastName)
-      .toBeNull();
+    expect(response.body.firstName).toBeNull();
+    expect(response.body.lastName).toBeNull();
   });
 
   it("should ignore a userId sent by the client", async () => {
@@ -126,8 +126,7 @@ describe("Customer routes", () => {
       await request(testApp)
         .post("/customers/me")
         .send({
-          userId:
-            "11111111-1111-4111-8111-111111111111",
+          userId: "11111111-1111-4111-8111-111111111111",
           firstName: "John",
           lastName: "Doe"
         });
@@ -174,10 +173,8 @@ describe("Customer routes", () => {
         .get("/customers/me");
 
     expect(response.status).toBe(200);
-    expect(response.body.id)
-      .toBe(created.body.id);
-    expect(response.body.userId)
-      .toBe(userId);
+    expect(response.body.id).toBe(created.body.id);
+    expect(response.body.userId).toBe(userId);
   });
 
   it("should return 404 when the authenticated user has no customer", async () => {
@@ -186,8 +183,9 @@ describe("Customer routes", () => {
         .get("/customers/me");
 
     expect(response.status).toBe(404);
-    expect(response.body.message)
-      .toBe("Customer not found");
+    expect(response.body.message).toBe(
+      "Customer not found"
+    );
   });
 
   it("should update the authenticated customer", async () => {
@@ -207,10 +205,8 @@ describe("Customer routes", () => {
         });
 
     expect(response.status).toBe(200);
-    expect(response.body.firstName)
-      .toBe("Jane");
-    expect(response.body.lastName)
-      .toBe("Smith");
+    expect(response.body.firstName).toBe("Jane");
+    expect(response.body.lastName).toBe("Smith");
   });
 
   it("should update only one profile field", async () => {
@@ -229,10 +225,8 @@ describe("Customer routes", () => {
         });
 
     expect(response.status).toBe(200);
-    expect(response.body.firstName)
-      .toBe("Jane");
-    expect(response.body.lastName)
-      .toBe("Doe");
+    expect(response.body.firstName).toBe("Jane");
+    expect(response.body.lastName).toBe("Doe");
   });
 
   it("should return 404 when updating without a customer profile", async () => {
@@ -244,8 +238,9 @@ describe("Customer routes", () => {
         });
 
     expect(response.status).toBe(404);
-    expect(response.body.message)
-      .toBe("Customer not found");
+    expect(response.body.message).toBe(
+      "Customer not found"
+    );
   });
 
   it("should validate customer creation", async () => {

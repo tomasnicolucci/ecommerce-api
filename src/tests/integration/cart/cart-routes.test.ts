@@ -57,6 +57,10 @@ describe("Cart routes", () => {
     );
 
     await postgresPool.query(
+      "DELETE FROM promotion_redemptions"
+    );
+
+    await postgresPool.query(
       "DELETE FROM orders"
     );
 

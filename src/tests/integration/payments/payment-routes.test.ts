@@ -53,6 +53,10 @@ describe("Payment routes", () => {
         await postgresPool.query(
             "DELETE FROM order_items"
         );
+        
+        await postgresPool.query(
+            "DELETE FROM promotion_redemptions"
+        );
 
         await postgresPool.query(
             "DELETE FROM orders"
@@ -133,21 +137,25 @@ describe("Payment routes", () => {
         const orderResult =
             await postgresPool.query<{ id: string }>(
                 `
-          INSERT INTO orders (
+        INSERT INTO orders (
             customer_id,
             cart_id,
             status,
+            subtotal_amount,
+            discount_amount,
             total_amount,
             currency
-          )
-          VALUES (
+        )
+        VALUES (
             $1,
             $2,
             'PENDING',
             200,
+            0,
+            200,
             'USD'
-          )
-          RETURNING id
+        )
+        RETURNING id
         `,
                 [
                     customerId,

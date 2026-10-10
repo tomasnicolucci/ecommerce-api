@@ -23,6 +23,18 @@ describe("Promotion routes", () => {
         );
 
         await postgresPool.query(
+            "DELETE FROM payments"
+        );
+
+        await postgresPool.query(
+            "DELETE FROM order_items"
+        );
+
+        await postgresPool.query(
+            "DELETE FROM orders"
+        );
+        
+        await postgresPool.query(
             "DELETE FROM promotions"
         );
 
