@@ -10,6 +10,7 @@ import { customerRouter } from "./modules/customers/presentation/routes/customer
 import { orderRouter } from "./modules/orders/presentation/routes/order-routes.js";
 import { paymentRouter } from "./modules/payments/presentation/routes/payment-routes.js";
 import { promotionRouter } from "./modules/promotions/presentation/routes/promotion-routes.js";
+import { internalAuthRouter } from "./modules/auth/presentation/routes/internal-auth-routes.js";
 
 export const app = express();
 
@@ -35,6 +36,8 @@ app.get("/health", async (_req, res) => {
     });
   }
 });
+
+app.use("/internal", internalAuthRouter);
 
 app.use("/categories", categoryRouter);
 app.use("/products", productRouter);
